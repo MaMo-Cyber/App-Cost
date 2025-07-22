@@ -1643,6 +1643,7 @@ const CostEntry = ({ project, onBack }) => {
     unit_price: '',
     total_amount: '',
     status: 'outstanding',
+    due_date: '',
     entry_date: new Date().toISOString().split('T')[0]
   });
   const [isHourly, setIsHourly] = useState(false);
