@@ -141,7 +141,8 @@ class ProjectSummary(BaseModel):
     total_spent: float
     total_outstanding: float
     total_paid: float
-    budget_remaining: float
+    budget_remaining_actual: float  # Budget - Total Spent (including outstanding)
+    budget_remaining_committed: float  # Budget - Total Paid (excluding outstanding)
     budget_utilization: float
     phases_summary: List[Dict[str, Any]]
     cost_breakdown: Dict[str, float]
