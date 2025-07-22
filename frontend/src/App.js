@@ -5,8 +5,332 @@ import axios from "axios";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-// Components
-const Dashboard = ({ project, onNavigate }) => {
+// Project List Component
+const ProjectList = ({ onProjectSelected, onCreateNew }) => {
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const fetchProjects = async () => {
+    try {
+      const response = await axios.get(`${API}/projects`);
+      setProjects(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      setLoading(false);
+    }
+  };
+
+  const deleteProject = async (projectId) => {
+    if (!window.confirm('Are you sure you want to delete this project? This cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      await axios.delete(`${API}/projects/${projectId}`);
+      fetchProjects();
+    } catch (error) {
+      if (error.response?.status === 400) {
+        alert('Cannot delete project with existing cost entries or phases. Remove them first.');
+      } else {
+        alert('Error deleting project');
+      }
+    }
+  };
+
+  if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border p-8">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Project Cost Tracker</h1>
+              <p className="text-gray-600 mt-2">Select a project to manage or create a new one</p>
+            </div>
+            <button
+              onClick={onCreateNew}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              + New Project
+            </button>
+          </div>
+
+          {projects.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No projects yet</h3>
+              <p className="text-gray-500 mb-6">Create your first project to start tracking costs</p>
+              <button
+                onClick={onCreateNew}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Create First Project
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {projects.map((project) => (
+                <div key={project.id} className="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{project.name}</h3>
+                      <p className="text-sm text-gray-600 mt-1">{project.description}</p>
+                    </div>
+                    <button
+                      onClick={() => deleteProject(project.id)}
+                      className="text-gray-400 hover:text-red-600 transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-2 mb-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Budget:</span>
+                      <span className="font-medium">${project.total_budget.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Timeline:</span>
+                      <span>{new Date(project.start_date).toLocaleDateString()} - {new Date(project.end_date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Status:</span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        project.status === 'active' ? 'bg-green-100 text-green-800' :
+                        project.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                        project.status === 'on_hold' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {project.status.replace('_', ' ').toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={() => onProjectSelected(project)}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Open Project
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Category Management Component
+const CategoryManagement = ({ onBack }) => {
+  const [categories, setCategories] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    type: 'hourly',
+    description: '',
+    default_rate: ''
+  });
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(`${API}/cost-categories`);
+      setCategories(response.data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/cost-categories`, {
+        ...formData,
+        default_rate: formData.default_rate ? parseFloat(formData.default_rate) : null
+      });
+      
+      setFormData({
+        name: '',
+        type: 'hourly',
+        description: '',
+        default_rate: ''
+      });
+      setShowForm(false);
+      fetchCategories();
+    } catch (error) {
+      console.error('Error creating category:', error);
+      alert('Error creating category');
+    }
+  };
+
+  const deleteCategory = async (categoryId) => {
+    if (!window.confirm('Are you sure you want to delete this category?')) {
+      return;
+    }
+    
+    try {
+      await axios.delete(`${API}/cost-categories/${categoryId}`);
+      fetchCategories();
+    } catch (error) {
+      if (error.response?.status === 400) {
+        alert('Cannot delete category that is used in cost entries. Remove all cost entries with this category first.');
+      } else {
+        alert('Error deleting category');
+      }
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border p-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Cost Categories</h2>
+            <div className="space-x-3">
+              <button
+                onClick={() => setShowForm(!showForm)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                {showForm ? 'Cancel' : '+ Add Category'}
+              </button>
+              <button
+                onClick={onBack}
+                className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                ← Back
+              </button>
+            </div>
+          </div>
+
+          {showForm && (
+            <div className="mb-8 p-6 border rounded-lg bg-gray-50">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Category</h3>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Category Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., Consulting, Equipment"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Category Type</label>
+                    <select
+                      value={formData.type}
+                      onChange={(e) => setFormData({...formData, type: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="hourly">Hourly (Hours × Rate)</option>
+                      <option value="material">Material (Quantity × Price)</option>
+                      <option value="fixed">Fixed Amount</option>
+                      <option value="custom">Custom</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows="2"
+                    placeholder="Brief description of this category"
+                  />
+                </div>
+                
+                {formData.type === 'hourly' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Default Hourly Rate (Optional)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.default_rate}
+                      onChange={(e) => setFormData({...formData, default_rate: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="0.00"
+                    />
+                  </div>
+                )}
+                
+                <button
+                  type="submit"
+                  className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Create Category
+                </button>
+              </form>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {categories.map((category) => (
+              <div key={category.id} className="border rounded-lg p-4 flex justify-between items-center">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3">
+                    <h3 className="font-medium text-gray-900">{category.name}</h3>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      category.type === 'hourly' ? 'bg-blue-100 text-blue-800' :
+                      category.type === 'material' ? 'bg-green-100 text-green-800' :
+                      category.type === 'fixed' ? 'bg-purple-100 text-purple-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {category.type.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{category.description}</p>
+                  {category.default_rate && (
+                    <p className="text-sm text-gray-500 mt-1">Default rate: ${category.default_rate}/hr</p>
+                  )}
+                </div>
+                <button
+                  onClick={() => deleteCategory(category.id)}
+                  className="text-gray-400 hover:text-red-600 transition-colors ml-4"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  </svg>
+                </button>
+              </div>
+            ))}
+            
+            {categories.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No cost categories yet. Add your first category to get started!</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Dashboard Component (Updated with navigation)
+const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -50,6 +374,18 @@ const Dashboard = ({ project, onNavigate }) => {
             </div>
             <div className="flex space-x-3">
               <button
+                onClick={onSwitchProject}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                ← All Projects
+              </button>
+              <button
+                onClick={() => onNavigate('categories')}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Manage Categories
+              </button>
+              <button
                 onClick={() => onNavigate('costs')}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
@@ -57,7 +393,7 @@ const Dashboard = ({ project, onNavigate }) => {
               </button>
               <button
                 onClick={() => onNavigate('phases')}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
                 Manage Phases
               </button>
@@ -268,7 +604,8 @@ const Dashboard = ({ project, onNavigate }) => {
   );
 };
 
-const ProjectSetup = ({ onProjectCreated }) => {
+// Project Setup Component (Updated)
+const ProjectSetup = ({ onProjectCreated, onCancel }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -297,7 +634,20 @@ const ProjectSetup = ({ onProjectCreated }) => {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-white rounded-lg shadow-sm border p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Create New Project</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Create New Project</h2>
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          )}
+        </div>
+        
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Project Name</label>
@@ -359,18 +709,30 @@ const ProjectSetup = ({ onProjectCreated }) => {
             </div>
           </div>
           
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            Create Project
-          </button>
+          <div className="flex space-x-3">
+            <button
+              type="submit"
+              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              Create Project
+            </button>
+            {onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </form>
       </div>
     </div>
   );
 };
 
+// Cost Entry Component (Updated)
 const CostEntry = ({ project, onBack }) => {
   const [categories, setCategories] = useState([]);
   const [phases, setPhases] = useState([]);
@@ -621,6 +983,7 @@ const CostEntry = ({ project, onBack }) => {
   );
 };
 
+// Phase Management Component (kept same as before)
 const PhaseManagement = ({ project, onBack }) => {
   const [phases, setPhases] = useState([]);
   const [formData, setFormData] = useState({
@@ -670,7 +1033,7 @@ const PhaseManagement = ({ project, onBack }) => {
 
   const updatePhaseStatus = async (phaseId, status) => {
     try {
-      await axios.put(`${API}/phases/${phaseId}/status?status=${status}`);
+      await axios.put(`${API}/phases/${phaseId}/status`, { status });
       fetchPhases();
     } catch (error) {
       console.error('Error updating phase status:', error);
@@ -840,23 +1203,31 @@ const PhaseManagement = ({ project, onBack }) => {
 // Main App Component
 function App() {
   const [currentProject, setCurrentProject] = useState(null);
-  const [currentView, setCurrentView] = useState('setup'); // setup, dashboard, costs, phases
+  const [currentView, setCurrentView] = useState('projectList'); // projectList, setup, dashboard, costs, phases, categories
 
   useEffect(() => {
-    // Try to load existing projects
+    // Check if there are existing projects, but default to project list
     loadProjects();
   }, []);
 
   const loadProjects = async () => {
     try {
       const response = await axios.get(`${API}/projects`);
-      if (response.data.length > 0) {
-        setCurrentProject(response.data[0]); // Use the first project for now
-        setCurrentView('dashboard');
+      // Don't auto-select project, let user choose from list
+      if (response.data.length === 0) {
+        setCurrentView('setup');
+      } else {
+        setCurrentView('projectList');
       }
     } catch (error) {
       console.error('Error loading projects:', error);
+      setCurrentView('setup');
     }
+  };
+
+  const handleProjectSelected = (project) => {
+    setCurrentProject(project);
+    setCurrentView('dashboard');
   };
 
   const handleProjectCreated = (project) => {
@@ -868,18 +1239,62 @@ function App() {
     setCurrentView(view);
   };
 
+  const handleSwitchProject = () => {
+    setCurrentProject(null);
+    setCurrentView('projectList');
+  };
+
   const renderCurrentView = () => {
     switch (currentView) {
+      case 'projectList':
+        return (
+          <ProjectList 
+            onProjectSelected={handleProjectSelected}
+            onCreateNew={() => setCurrentView('setup')}
+          />
+        );
       case 'setup':
-        return <ProjectSetup onProjectCreated={handleProjectCreated} />;
+        return (
+          <ProjectSetup 
+            onProjectCreated={handleProjectCreated}
+            onCancel={() => setCurrentView('projectList')}
+          />
+        );
       case 'dashboard':
-        return <Dashboard project={currentProject} onNavigate={handleNavigation} />;
+        return (
+          <Dashboard 
+            project={currentProject} 
+            onNavigate={handleNavigation}
+            onSwitchProject={handleSwitchProject}
+          />
+        );
       case 'costs':
-        return <CostEntry project={currentProject} onBack={() => setCurrentView('dashboard')} />;
+        return (
+          <CostEntry 
+            project={currentProject} 
+            onBack={() => setCurrentView('dashboard')} 
+          />
+        );
       case 'phases':
-        return <PhaseManagement project={currentProject} onBack={() => setCurrentView('dashboard')} />;
+        return (
+          <PhaseManagement 
+            project={currentProject} 
+            onBack={() => setCurrentView('dashboard')} 
+          />
+        );
+      case 'categories':
+        return (
+          <CategoryManagement 
+            onBack={() => setCurrentView('dashboard')} 
+          />
+        );
       default:
-        return <ProjectSetup onProjectCreated={handleProjectCreated} />;
+        return (
+          <ProjectList 
+            onProjectSelected={handleProjectSelected}
+            onCreateNew={() => setCurrentView('setup')}
+          />
+        );
     }
   };
 
