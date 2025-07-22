@@ -1894,6 +1894,13 @@ function App() {
             onBack={() => setCurrentView('dashboard')} 
           />
         );
+      case 'cost-status':
+        return (
+          <CostStatusManager 
+            project={currentProject} 
+            onBack={() => setCurrentView('dashboard')} 
+          />
+        );
       default:
         return (
           <ProjectList 
