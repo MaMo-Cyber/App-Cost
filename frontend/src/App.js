@@ -32,10 +32,11 @@ ChartJS.register(
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-// Project List Component (Fixed deletion)
+// Project List Component (with backup functionality)
 const ProjectList = ({ onProjectSelected, onCreateNew }) => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -49,6 +50,61 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
     } catch (error) {
       console.error('Error fetching projects:', error);
       setLoading(false);
+    }
+  };
+
+  const exportAllData = async () => {
+    try {
+      const response = await axios.get(`${API}/export-all-data`);
+      
+      // Create downloadable file
+      const dataStr = JSON.stringify(response.data, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      
+      // Create download link
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `project-cost-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      alert('✅ Backup exported successfully! Check your downloads folder.');
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('❌ Error exporting data. Please try again.');
+    }
+  };
+
+  const importData = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    setImporting(true);
+    try {
+      const fileText = await file.text();
+      const backupData = JSON.parse(fileText);
+      
+      const confirmImport = window.confirm(
+        'This will replace ALL current data with the backup data.\n\nAre you sure you want to continue?'
+      );
+      
+      if (!confirmImport) {
+        setImporting(false);
+        return;
+      }
+      
+      await axios.post(`${API}/import-all-data`, backupData);
+      alert('✅ Data imported successfully!');
+      fetchProjects(); // Refresh the list
+    } catch (error) {
+      console.error('Import error:', error);
+      alert('❌ Error importing data. Please check the file format.');
+    } finally {
+      setImporting(false);
+      event.target.value = ''; // Reset file input
     }
   };
 
