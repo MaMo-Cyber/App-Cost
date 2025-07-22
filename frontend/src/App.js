@@ -1696,16 +1696,68 @@ const CostEntry = ({ project, onBack }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     try {
-      await axios.post(`${API}/cost-entries`, {
+      // Validate required fields
+      if (!formData.category_id) {
+        alert('Please select a cost category');
+        return;
+      }
+      
+      // Calculate total amount
+      let totalAmount = 0;
+      if (isHourly) {
+        const hours = parseFloat(formData.hours) || 0;
+        const rate = parseFloat(formData.hourly_rate) || 0;
+        if (hours <= 0 || rate <= 0) {
+          alert('Please enter valid hours and hourly rate');
+          return;
+        }
+        totalAmount = hours * rate;
+      } else {
+        const quantity = parseFloat(formData.quantity) || 0;
+        const unitPrice = parseFloat(formData.unit_price) || 0;
+        if (quantity <= 0 || unitPrice <= 0) {
+          alert('Please enter valid quantity and unit price');
+          return;
+        }
+        totalAmount = quantity * unitPrice;
+      }
+      
+      // If manual total amount is provided, use that instead
+      if (formData.total_amount && parseFloat(formData.total_amount) > 0) {
+        totalAmount = parseFloat(formData.total_amount);
+      }
+      
+      if (totalAmount <= 0) {
+        alert('Total amount must be greater than 0');
+        return;
+      }
+      
+      // Prepare submission data
+      const submissionData = {
         project_id: project.id,
-        ...formData,
-        hours: formData.hours ? parseFloat(formData.hours) : null,
-        hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : null,
-        quantity: formData.quantity ? parseFloat(formData.quantity) : null,
-        unit_price: formData.unit_price ? parseFloat(formData.unit_price) : null,
-        total_amount: formData.total_amount ? parseFloat(formData.total_amount) : calculateTotal()
-      });
+        category_id: formData.category_id,
+        phase_id: formData.phase_id || null,
+        description: formData.description || '',
+        status: formData.status,
+        entry_date: formData.entry_date,
+        due_date: formData.status === 'outstanding' && formData.due_date ? formData.due_date : null,
+        total_amount: totalAmount
+      };
+      
+      // Add hourly-specific fields
+      if (isHourly) {
+        submissionData.hours = parseFloat(formData.hours);
+        submissionData.hourly_rate = parseFloat(formData.hourly_rate);
+      } else {
+        submissionData.quantity = parseFloat(formData.quantity);
+        submissionData.unit_price = parseFloat(formData.unit_price);
+      }
+      
+      console.log('Submitting cost entry data:', submissionData);
+      
+      await axios.post(`${API}/cost-entries`, submissionData);
       
       // Reset form
       setFormData({
@@ -1725,7 +1777,8 @@ const CostEntry = ({ project, onBack }) => {
       alert('Cost entry added successfully!');
     } catch (error) {
       console.error('Error adding cost entry:', error);
-      alert('Error adding cost entry');
+      const errorMessage = error.response?.data?.detail || 'Error adding cost entry';
+      alert(errorMessage);
     }
   };
 
