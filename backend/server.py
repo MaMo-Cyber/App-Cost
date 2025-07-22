@@ -501,7 +501,8 @@ async def get_project_summary(project_id: str):
         total_spent=total_spent,
         total_outstanding=total_outstanding,
         total_paid=total_paid,
-        budget_remaining=project["total_budget"] - total_spent,
+        budget_remaining_actual=project["total_budget"] - total_spent,  # True remaining after all commitments
+        budget_remaining_committed=project["total_budget"] - total_paid,  # Remaining if outstanding is paid
         budget_utilization=budget_utilization,
         phases_summary=phases_summary,
         cost_breakdown=cost_breakdown,
