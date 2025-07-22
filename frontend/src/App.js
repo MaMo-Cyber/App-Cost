@@ -450,7 +450,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
         beginAtZero: true,
         ticks: {
           callback: function(value) {
-            return '$' + value.toLocaleString();
+            return '€' + value.toLocaleString();
           }
         }
       }
