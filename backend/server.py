@@ -242,6 +242,36 @@ async def get_cost_categories():
     categories = await db.cost_categories.find().to_list(1000)
     return [CostCategory(**category) for category in categories]
 
+@api_router.delete("/cost-categories/{category_id}")
+async def delete_cost_category(category_id: str):
+    # Check if category is used in any cost entries
+    cost_entries = await db.cost_entries.find({"category_id": category_id}).to_list(1)
+    if cost_entries:
+        raise HTTPException(
+            status_code=400, 
+            detail="Cannot delete category that is used in cost entries. Remove all cost entries with this category first."
+        )
+    
+    result = await db.cost_categories.delete_one({"id": category_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Cost category not found")
+    return {"message": "Cost category deleted successfully"}
+
+@api_router.put("/cost-categories/{category_id}", response_model=CostCategory)
+async def update_cost_category(category_id: str, category_update: CostCategoryCreate):
+    category_dict = category_update.dict()
+    
+    result = await db.cost_categories.update_one(
+        {"id": category_id}, 
+        {"$set": category_dict}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Cost category not found")
+    
+    updated_category = await db.cost_categories.find_one({"id": category_id})
+    return CostCategory(**updated_category)
+
 # Cost entry routes
 @api_router.post("/cost-entries", response_model=CostEntry)
 async def create_cost_entry(entry: CostEntryCreate):
