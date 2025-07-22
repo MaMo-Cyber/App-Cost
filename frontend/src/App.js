@@ -53,15 +53,24 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
   };
 
   const deleteProject = async (projectId, projectName) => {
-    if (!window.confirm(`Are you sure you want to delete "${projectName}"?\n\nThis action cannot be undone and will permanently remove the project.`)) {
+    console.log('deleteProject called with:', projectId, projectName);
+    
+    const confirmDelete = window.confirm(`Are you sure you want to delete "${projectName}"?\n\nThis action cannot be undone and will permanently remove the project.`);
+    console.log('User confirmation:', confirmDelete);
+    
+    if (!confirmDelete) {
       return;
     }
     
     try {
       console.log('Attempting to delete project:', projectId, projectName);
-      await axios.delete(`${API}/projects/${projectId}`);
-      console.log('Project deleted successfully');
+      console.log('Delete URL:', `${API}/projects/${projectId}`);
+      
+      const response = await axios.delete(`${API}/projects/${projectId}`);
+      console.log('Delete response:', response);
+      
       alert(`Project "${projectName}" deleted successfully!`);
+      console.log('Refreshing projects list...');
       fetchProjects(); // Refresh the list
     } catch (error) {
       console.error('Delete error:', error);
