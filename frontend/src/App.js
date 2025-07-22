@@ -1546,7 +1546,7 @@ const CostEntry = ({ project, onBack }) => {
                   placeholder="0.00"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {calculateTotal() > 0 && `Calculated: $${calculateTotal().toFixed(2)}`}
+                  {calculateTotal() > 0 && `Calculated: €${calculateTotal().toFixed(2)}`}
                 </p>
               </div>
               
@@ -1559,6 +1559,21 @@ const CostEntry = ({ project, onBack }) => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Payment Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({...formData, status: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="outstanding">Outstanding (Not Yet Paid)</option>
+                <option value="paid">Paid (Already Settled)</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Select "Outstanding" for costs that need to be paid, "Paid" for already settled costs
+              </p>
             </div>
             
             <button
