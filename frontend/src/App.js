@@ -1885,6 +1885,21 @@ const CostEntry = ({ project, onBack }) => {
                 Select "Outstanding" for costs that need to be paid, "Paid" for already settled costs
               </p>
             </div>
+
+            {formData.status === 'outstanding' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Due Date (Optional)</label>
+                <input
+                  type="date"
+                  value={formData.due_date}
+                  onChange={(e) => setFormData({...formData, due_date: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  When does this payment need to be made? Leave empty if no specific due date.
+                </p>
+              </div>
+            )}
             
             <button
               type="submit"
