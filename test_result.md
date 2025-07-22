@@ -216,11 +216,11 @@ frontend:
 
   - task: "Dashboard with budget tracking"
     implemented: true
-    working: true
+    working: false
     file: "/app/frontend/src/App.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
@@ -228,6 +228,9 @@ frontend:
         - working: true
           agent: "testing"
           comment: "✅ COMPREHENSIVE TESTING COMPLETED: Dashboard functionality working excellently. Successfully verified all key components: 1) Key metrics display (Total Budget: $150K, Total Spent: $17.9K, Remaining: $132.1K, Budget Used: 11.9%) ✓, 2) Status indicators showing 'On Track' status ✓, 3) Budget vs Actual progress bars with proper color coding ✓, 4) Cost breakdown by category (Internal Hours, External Hours, Materials) ✓, 5) Phases progress section with 3 phases and budget utilization ✓, 6) Recent cost entries table with 4 entries ✓. All dashboard sections render correctly and display real-time data integration."
+        - working: false
+          agent: "main"
+          comment: "User reported Budget Analysis chart not showing 'Remaining' portion. Fixed frontend issue - updated budgetComparisonData to use 'budget_remaining_actual' instead of deprecated 'budget_remaining' field from backend response."
 
   - task: "Cost entry interface"
     implemented: true
