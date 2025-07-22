@@ -53,20 +53,22 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
   };
 
   const deleteProject = async (projectId, projectName) => {
-    if (!window.confirm(`Are you sure you want to delete "${projectName}"? This cannot be undone.`)) {
+    if (!window.confirm(`Are you sure you want to delete "${projectName}"?\n\nThis action cannot be undone and will permanently remove the project.`)) {
       return;
     }
     
     try {
+      console.log('Attempting to delete project:', projectId, projectName);
       await axios.delete(`${API}/projects/${projectId}`);
-      alert('Project deleted successfully!');
+      console.log('Project deleted successfully');
+      alert(`Project "${projectName}" deleted successfully!`);
       fetchProjects(); // Refresh the list
     } catch (error) {
+      console.error('Delete error:', error);
       if (error.response?.status === 400) {
-        alert('Cannot delete project with existing cost entries or phases. Remove them first.');
+        alert(`Cannot delete "${projectName}" because it has existing cost entries or phases.\n\nPlease remove all cost entries and phases first, then try again.`);
       } else {
-        alert('Error deleting project. Please try again.');
-        console.error('Delete error:', error);
+        alert(`Error deleting project "${projectName}". Please try again.\n\nError: ${error.message}`);
       }
     }
   };
