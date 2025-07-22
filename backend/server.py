@@ -414,9 +414,9 @@ async def create_cost_entry(entry: CostEntryCreate):
         "unit_price": entry_obj.unit_price,
         "total_amount": entry_obj.total_amount,
         "status": entry_obj.status,
-        "due_date": entry_dict.get("due_date"),  # Already a string or None
-        "entry_date": entry_dict["entry_date"],  # Already a string
-        "created_at": entry_dict["created_at"]   # Already a string
+        "due_date": entry_obj.due_date.isoformat() if entry_obj.due_date else None,
+        "entry_date": entry_obj.entry_date.isoformat(),
+        "created_at": entry_obj.created_at.isoformat()
     }
     
     await db.cost_entries.insert_one(mongo_data)
