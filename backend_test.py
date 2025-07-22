@@ -226,7 +226,7 @@ def test_phase_management():
     
     # Update phase status
     if test_data['phase_ids']:
-        status_update, status_code = make_request('PUT', f'/phases/{test_data["phase_ids"][0]}/status', "in_progress")
+        status_update, status_code = make_request('PUT', f'/phases/{test_data["phase_ids"][0]}/status', {"status": "in_progress"})
         if status_code != 200:
             print("  ❌ Failed to update phase status")
             return False
