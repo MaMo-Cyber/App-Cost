@@ -322,16 +322,36 @@ async def create_cost_entry(entry: CostEntryCreate):
         else:
             raise HTTPException(status_code=400, detail="Cannot calculate total amount")
     
-    # Handle date fields properly - convert to string for MongoDB
-    if not entry.entry_date:
+    # Handle date fields properly - convert ALL dates to strings
+    entry_date = entry_dict.get("entry_date")
+    if entry_date:
+        if isinstance(entry_date, str):
+            # Try to parse and reformat to ensure consistency
+            try:
+                parsed_date = datetime.fromisoformat(entry_date).date()
+                entry_dict["entry_date"] = parsed_date.isoformat()
+            except:
+                entry_dict["entry_date"] = entry_date
+        elif hasattr(entry_date, 'isoformat'):
+            entry_dict["entry_date"] = entry_date.isoformat()
+        else:
+            entry_dict["entry_date"] = str(entry_date)
+    else:
         entry_dict["entry_date"] = date.today().isoformat()
-    elif isinstance(entry_dict.get("entry_date"), date):
-        entry_dict["entry_date"] = entry_dict["entry_date"].isoformat()
     
     # Handle due_date properly
-    if entry_dict.get("due_date"):
-        if isinstance(entry_dict["due_date"], date):
-            entry_dict["due_date"] = entry_dict["due_date"].isoformat()
+    due_date = entry_dict.get("due_date")
+    if due_date:
+        if isinstance(due_date, str):
+            try:
+                parsed_date = datetime.fromisoformat(due_date).date()
+                entry_dict["due_date"] = parsed_date.isoformat()
+            except:
+                entry_dict["due_date"] = due_date
+        elif hasattr(due_date, 'isoformat'):
+            entry_dict["due_date"] = due_date.isoformat()
+        else:
+            entry_dict["due_date"] = str(due_date)
     else:
         entry_dict["due_date"] = None
     
@@ -339,12 +359,48 @@ async def create_cost_entry(entry: CostEntryCreate):
     if not entry_dict.get("status"):
         entry_dict["status"] = "outstanding"
     
-    entry_obj = CostEntry(**entry_dict)
+    # Add created_at as string
+    entry_dict["created_at"] = datetime.utcnow().isoformat()
     
-    # Convert CostEntry object to dict for MongoDB insertion
-    entry_data = entry_obj.dict()
+    # Create the entry object but don't convert dates back
+    entry_obj = CostEntry(
+        id=str(uuid.uuid4()),
+        project_id=entry_dict["project_id"],
+        phase_id=entry_dict.get("phase_id"),
+        category_id=entry_dict["category_id"],
+        category_name=entry_dict["category_name"],
+        description=entry_dict.get("description", ""),
+        hours=entry_dict.get("hours"),
+        hourly_rate=entry_dict.get("hourly_rate"),
+        quantity=entry_dict.get("quantity"),
+        unit_price=entry_dict.get("unit_price"),
+        total_amount=entry_dict["total_amount"],
+        status=entry_dict["status"],
+        due_date=entry_dict.get("due_date"),
+        entry_date=entry_dict["entry_date"],
+        created_at=entry_dict["created_at"]
+    )
     
-    await db.cost_entries.insert_one(entry_data)
+    # Prepare data for MongoDB - ensure all dates are strings
+    mongo_data = {
+        "id": entry_obj.id,
+        "project_id": entry_obj.project_id,
+        "phase_id": entry_obj.phase_id,
+        "category_id": entry_obj.category_id,
+        "category_name": entry_obj.category_name,
+        "description": entry_obj.description,
+        "hours": entry_obj.hours,
+        "hourly_rate": entry_obj.hourly_rate,
+        "quantity": entry_obj.quantity,
+        "unit_price": entry_obj.unit_price,
+        "total_amount": entry_obj.total_amount,
+        "status": entry_obj.status,
+        "due_date": entry_dict.get("due_date"),  # Already a string or None
+        "entry_date": entry_dict["entry_date"],  # Already a string
+        "created_at": entry_dict["created_at"]   # Already a string
+    }
+    
+    await db.cost_entries.insert_one(mongo_data)
     return entry_obj
 
 @api_router.get("/projects/{project_id}/cost-entries", response_model=List[CostEntry])
