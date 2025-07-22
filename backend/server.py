@@ -457,9 +457,20 @@ async def get_project_summary(project_id: str):
     
     # Cost breakdown by category
     cost_breakdown = {}
+    outstanding_breakdown = {}
+    paid_breakdown = {}
+    
     for entry in cost_entries:
         category = entry.get("category_name", "Unknown")
-        cost_breakdown[category] = cost_breakdown.get(category, 0) + entry.get("total_amount", 0)
+        amount = entry.get("total_amount", 0)
+        status = entry.get("status", "outstanding")
+        
+        cost_breakdown[category] = cost_breakdown.get(category, 0) + amount
+        
+        if status == "outstanding":
+            outstanding_breakdown[category] = outstanding_breakdown.get(category, 0) + amount
+        else:
+            paid_breakdown[category] = paid_breakdown.get(category, 0) + amount
     
     # Trend data (last 30 days)
     from collections import defaultdict
