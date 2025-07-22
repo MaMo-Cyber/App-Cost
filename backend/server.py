@@ -137,10 +137,14 @@ class CostEntryCreate(BaseModel):
 class ProjectSummary(BaseModel):
     project: Project
     total_spent: float
+    total_outstanding: float
+    total_paid: float
     budget_remaining: float
     budget_utilization: float
     phases_summary: List[Dict[str, Any]]
     cost_breakdown: Dict[str, float]
+    outstanding_breakdown: Dict[str, float]
+    paid_breakdown: Dict[str, float]
     trend_data: List[Dict[str, Any]]
     status_indicator: str
 
