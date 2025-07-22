@@ -762,6 +762,12 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                 ← All Projects
               </button>
               <button
+                onClick={() => onNavigate('cost-status')}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+              >
+                Payment Status
+              </button>
+              <button
                 onClick={() => onNavigate('categories')}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               >
