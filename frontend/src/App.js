@@ -286,7 +286,7 @@ const CostBreakdownModal = ({ isOpen, onClose, project, categoryName }) => {
                         </p>
                       </div>
                       <div className="text-right ml-4">
-                        <p className="text-xl font-bold text-gray-900">${entry.total_amount.toLocaleString()}</p>
+                        <p className="text-xl font-bold text-gray-900">€{entry.total_amount.toLocaleString()}</p>
                       </div>
                     </div>
                   </div>
