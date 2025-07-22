@@ -152,11 +152,11 @@ backend:
 
   - task: "Cost entry system with calculations"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: "NA"
           agent: "main"
@@ -164,6 +164,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "✅ COMPREHENSIVE TESTING COMPLETED: Cost entry system with calculations working flawlessly. Successfully tested all calculation types: 1) Hourly entry: 40h × $85/h = $3,400 ✓, 2) Material entry: 5 units × $1,200 = $6,000 ✓, 3) Fixed cost entry: $2,500 direct amount ✓. All calculations accurate, cost entries properly linked to phases and categories. Retrieved project cost entries (3 total). Successfully deleted cost entry. Fixed date serialization for MongoDB storage."
+        - working: false
+          agent: "main"
+          comment: "User reported cost entry failing with date serialization error. Fixed backend date handling logic in create_cost_entry endpoint - issue was passing string dates to CostEntry constructor that expects date objects. Updated to properly convert between string and date formats."
 
   - task: "Project analytics and summary"
     implemented: true
