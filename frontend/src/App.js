@@ -2226,6 +2226,13 @@ function App() {
             onBack={() => setCurrentView('dashboard')} 
           />
         );
+      case 'payment-timeline':
+        return (
+          <PaymentTimeline 
+            project={currentProject} 
+            onBack={() => setCurrentView('dashboard')} 
+          />
+        );
       default:
         return (
           <ProjectList 
