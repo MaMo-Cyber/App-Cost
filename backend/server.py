@@ -208,7 +208,11 @@ async def get_project_phases(project_id: str):
     return [Phase(**phase) for phase in phases]
 
 @api_router.put("/phases/{phase_id}/status")
-async def update_phase_status(phase_id: str, status: PhaseStatus):
+async def update_phase_status(phase_id: str, status_data: dict):
+    status = status_data.get("status")
+    if not status:
+        raise HTTPException(status_code=400, detail="Status is required")
+    
     result = await db.phases.update_one(
         {"id": phase_id}, 
         {"$set": {"status": status}}
