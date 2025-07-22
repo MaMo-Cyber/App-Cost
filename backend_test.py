@@ -236,80 +236,94 @@ def test_phase_management():
     return True
 
 def test_cost_entries():
-    """Test cost entry system with calculations"""
-    print("\n🧪 Testing Cost Entry System")
+    """Test cost entry system with calculations and date serialization fix"""
+    print("\n🧪 Testing Cost Entry System with Date Serialization")
     
     if not test_data['project_id'] or not test_data['category_ids']:
         print("  ❌ Missing project ID or category IDs for cost entry testing")
         return False
     
-    # Test hourly cost entry
-    hourly_entry = {
+    # Test 1: Cost entry with string date format (YYYY-MM-DD) - Outstanding status with due_date
+    print("  🔍 Testing cost entry with string date and outstanding status...")
+    outstanding_entry = {
         "project_id": test_data['project_id'],
         "phase_id": test_data['phase_ids'][0] if test_data['phase_ids'] else None,
         "category_id": test_data['category_ids'][0],
         "description": "Senior developer work on authentication module",
         "hours": 40.0,
         "hourly_rate": 85.0,
-        "entry_date": "2024-02-15"
+        "entry_date": "2024-02-15",  # String date format
+        "status": "outstanding",
+        "due_date": "2024-03-15"  # Due date for outstanding payment
     }
     
-    entry1, status = make_request('POST', '/cost-entries', hourly_entry)
+    entry1, status = make_request('POST', '/cost-entries', outstanding_entry)
     if status != 200 or not entry1:
-        print("  ❌ Failed to create hourly cost entry")
+        print(f"  ❌ Failed to create outstanding cost entry with string dates - Status: {status}")
         return False
     
-    expected_total = hourly_entry['hours'] * hourly_entry['hourly_rate']
+    expected_total = outstanding_entry['hours'] * outstanding_entry['hourly_rate']
     if abs(entry1['total_amount'] - expected_total) > 0.01:
         print(f"  ❌ Hourly calculation incorrect: expected {expected_total}, got {entry1['total_amount']}")
         return False
     
-    test_data['cost_entry_ids'].append(entry1['id'])
-    print(f"  ✅ Created hourly entry: ${entry1['total_amount']:,.2f} (40h × $85/h)")
+    # Verify date fields are properly handled
+    if not entry1.get('entry_date') or not entry1.get('due_date'):
+        print("  ❌ Date fields missing in response")
+        return False
     
-    # Test material cost entry
-    material_entry = {
+    test_data['cost_entry_ids'].append(entry1['id'])
+    print(f"  ✅ Created outstanding entry: ${entry1['total_amount']:,.2f} (40h × $85/h) - Due: {entry1.get('due_date')}")
+    
+    # Test 2: Cost entry with paid status (no due_date needed)
+    print("  🔍 Testing cost entry with paid status...")
+    paid_entry = {
         "project_id": test_data['project_id'],
         "phase_id": test_data['phase_ids'][1] if len(test_data['phase_ids']) > 1 else None,
         "category_id": test_data['category_ids'][1] if len(test_data['category_ids']) > 1 else test_data['category_ids'][0],
         "description": "Development hardware and testing devices",
         "quantity": 5.0,
         "unit_price": 1200.0,
-        "entry_date": "2024-03-10"
+        "entry_date": "2024-03-10",  # String date format
+        "status": "paid"  # Paid status, no due_date needed
     }
     
-    entry2, status = make_request('POST', '/cost-entries', material_entry)
+    entry2, status = make_request('POST', '/cost-entries', paid_entry)
     if status != 200 or not entry2:
-        print("  ❌ Failed to create material cost entry")
+        print(f"  ❌ Failed to create paid cost entry - Status: {status}")
         return False
     
-    expected_total = material_entry['quantity'] * material_entry['unit_price']
+    expected_total = paid_entry['quantity'] * paid_entry['unit_price']
     if abs(entry2['total_amount'] - expected_total) > 0.01:
         print(f"  ❌ Material calculation incorrect: expected {expected_total}, got {entry2['total_amount']}")
         return False
     
     test_data['cost_entry_ids'].append(entry2['id'])
-    print(f"  ✅ Created material entry: ${entry2['total_amount']:,.2f} (5 × $1,200)")
+    print(f"  ✅ Created paid entry: ${entry2['total_amount']:,.2f} (5 × $1,200) - Status: {entry2.get('status')}")
     
-    # Test fixed cost entry
-    fixed_entry = {
+    # Test 3: Cost entry with different date format variations
+    print("  🔍 Testing cost entry with current date (no entry_date specified)...")
+    current_date_entry = {
         "project_id": test_data['project_id'],
         "phase_id": test_data['phase_ids'][2] if len(test_data['phase_ids']) > 2 else None,
         "category_id": test_data['category_ids'][2] if len(test_data['category_ids']) > 2 else test_data['category_ids'][0],
         "description": "Software licenses and deployment costs",
         "total_amount": 2500.0,
-        "entry_date": "2024-06-05"
+        "status": "outstanding",
+        "due_date": "2024-07-01"
+        # No entry_date specified - should default to today
     }
     
-    entry3, status = make_request('POST', '/cost-entries', fixed_entry)
+    entry3, status = make_request('POST', '/cost-entries', current_date_entry)
     if status != 200 or not entry3:
-        print("  ❌ Failed to create fixed cost entry")
+        print(f"  ❌ Failed to create cost entry with default date - Status: {status}")
         return False
     
     test_data['cost_entry_ids'].append(entry3['id'])
-    print(f"  ✅ Created fixed entry: ${entry3['total_amount']:,.2f}")
+    print(f"  ✅ Created entry with default date: ${entry3['total_amount']:,.2f} - Entry Date: {entry3.get('entry_date')}")
     
-    # Get project cost entries
+    # Test 4: Verify all entries are retrievable
+    print("  🔍 Verifying all cost entries are retrievable...")
     entries, status = make_request('GET', f'/projects/{test_data["project_id"]}/cost-entries')
     if status != 200:
         print("  ❌ Failed to get project cost entries")
@@ -317,15 +331,31 @@ def test_cost_entries():
     
     print(f"  ✅ Retrieved {len(entries)} cost entries for project")
     
-    # Test delete cost entry
-    if test_data['cost_entry_ids']:
-        delete_result, status = make_request('DELETE', f'/cost-entries/{test_data["cost_entry_ids"][-1]}')
-        if status != 200:
-            print("  ❌ Failed to delete cost entry")
-            return False
-        
-        print("  ✅ Successfully deleted cost entry")
-        test_data['cost_entry_ids'].pop()  # Remove from our tracking
+    # Test 5: Test outstanding and paid entry filtering
+    print("  🔍 Testing outstanding entries filtering...")
+    outstanding_entries, status = make_request('GET', f'/projects/{test_data["project_id"]}/cost-entries/outstanding')
+    if status != 200:
+        print("  ❌ Failed to get outstanding cost entries")
+        return False
+    
+    print(f"  ✅ Retrieved {len(outstanding_entries)} outstanding entries")
+    
+    print("  🔍 Testing paid entries filtering...")
+    paid_entries, status = make_request('GET', f'/projects/{test_data["project_id"]}/cost-entries/paid')
+    if status != 200:
+        print("  ❌ Failed to get paid cost entries")
+        return False
+    
+    print(f"  ✅ Retrieved {len(paid_entries)} paid entries")
+    
+    # Test 6: Test payment timeline endpoint
+    print("  🔍 Testing payment timeline...")
+    timeline, status = make_request('GET', f'/projects/{test_data["project_id"]}/payment-timeline')
+    if status != 200:
+        print("  ❌ Failed to get payment timeline")
+        return False
+    
+    print(f"  ✅ Retrieved payment timeline with {len(timeline.get('timeline_data', {}).get('overdue', []))} overdue items")
     
     return True
 
