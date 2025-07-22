@@ -188,7 +188,129 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
   );
 };
 
-// Enhanced Dashboard with Charts
+// Cost Breakdown Modal Component
+const CostBreakdownModal = ({ isOpen, onClose, project, categoryName }) => {
+  const [categoryData, setCategoryData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && categoryName && project) {
+      fetchCategoryDetails();
+    }
+  }, [isOpen, categoryName, project]);
+
+  const fetchCategoryDetails = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API}/projects/${project.id}/cost-entries/by-category/${encodeURIComponent(categoryName)}`);
+      setCategoryData(response.data);
+    } catch (error) {
+      console.error('Error fetching category details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+        <div className="flex justify-between items-center p-6 border-b">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{categoryName} - Cost Details</h2>
+            <p className="text-gray-600">Project: {project?.name}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+          {loading ? (
+            <div className="flex justify-center items-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : categoryData ? (
+            <div>
+              {/* Summary */}
+              <div className="bg-blue-50 rounded-lg p-4 mb-6">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-2xl font-bold text-blue-600">{categoryData.total_entries}</p>
+                    <p className="text-sm text-gray-600">Total Entries</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-blue-600">${categoryData.total_amount.toLocaleString()}</p>
+                    <p className="text-sm text-gray-600">Total Amount</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-blue-600">${(categoryData.total_amount / categoryData.total_entries).toFixed(2)}</p>
+                    <p className="text-sm text-gray-600">Average per Entry</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Detailed List */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">All {categoryName} Entries</h3>
+                {categoryData.entries.map((entry, index) => (
+                  <div key={entry.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="text-sm font-medium text-gray-900">#{index + 1}</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            entry.type === 'hourly' ? 'bg-blue-100 text-blue-800' :
+                            entry.type === 'material' ? 'bg-green-100 text-green-800' :
+                            'bg-purple-100 text-purple-800'
+                          }`}>
+                            {entry.type.toUpperCase()}
+                          </span>
+                          {entry.phase_name && (
+                            <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
+                              {entry.phase_name}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-gray-900 font-medium">{entry.description}</p>
+                        <p className="text-sm text-gray-600">{entry.details}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Entry Date: {new Date(entry.entry_date).toLocaleDateString()} • 
+                          Created: {new Date(entry.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="text-right ml-4">
+                        <p className="text-xl font-bold text-gray-900">${entry.total_amount.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {categoryData.entries.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No cost entries found for this category.</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Failed to load category details.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Enhanced Dashboard with Drill-down functionality
 const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
