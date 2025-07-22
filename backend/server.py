@@ -116,8 +116,9 @@ class CostEntry(BaseModel):
     unit_price: Optional[float] = None
     # Total amount (calculated or manual)
     total_amount: float
-    # Payment status
+    # Payment status and due date
     status: CostStatus = CostStatus.OUTSTANDING
+    due_date: Optional[date] = None  # When payment is due
     entry_date: date = Field(default_factory=date.today)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -132,6 +133,7 @@ class CostEntryCreate(BaseModel):
     unit_price: Optional[float] = None
     total_amount: Optional[float] = None
     status: CostStatus = CostStatus.OUTSTANDING
+    due_date: Optional[date] = None  # When payment is due
     entry_date: Optional[date] = None
 
 class ProjectSummary(BaseModel):
