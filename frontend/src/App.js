@@ -263,7 +263,295 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
   );
 };
 
-// Outstanding/Paid Costs Management Component
+// Payment Timeline Component
+const PaymentTimeline = ({ project, onBack }) => {
+  const [timelineData, setTimelineData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTimelineData();
+  }, []);
+
+  const fetchTimelineData = async () => {
+    try {
+      const response = await axios.get(`${API}/projects/${project.id}/payment-timeline`);
+      setTimelineData(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching timeline data:', error);
+      setLoading(false);
+    }
+  };
+
+  const updateDueDate = async (entryId, newDueDate) => {
+    try {
+      await axios.put(`${API}/cost-entries/${entryId}/due-date`, {}, {
+        params: { due_date: newDueDate }
+      });
+      fetchTimelineData(); // Refresh timeline
+      alert('Due date updated successfully!');
+    } catch (error) {
+      console.error('Error updating due date:', error);
+      alert('Error updating due date');
+    }
+  };
+
+  const markAsPaid = async (entryId) => {
+    try {
+      await axios.put(`${API}/cost-entries/${entryId}/status`, {}, {
+        params: { status: 'paid' }
+      });
+      fetchTimelineData(); // Refresh timeline
+      alert('Cost marked as paid!');
+    } catch (error) {
+      console.error('Error marking as paid:', error);
+      alert('Error updating status');
+    }
+  };
+
+  if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+
+  if (!timelineData) return <div>No timeline data available</div>;
+
+  const { timeline_data, summary, today } = timelineData;
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border p-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Payment Timeline</h2>
+              <p className="text-gray-600">Outstanding payment schedule for {project.name}</p>
+            </div>
+            <button
+              onClick={onBack}
+              className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              ← Back to Dashboard
+            </button>
+          </div>
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+            <div className="bg-red-100 border border-red-300 rounded-lg p-4">
+              <h3 className="font-semibold text-red-800 mb-1">🚨 Overdue</h3>
+              <p className="text-2xl font-bold text-red-600">€{summary.overdue_total.toLocaleString()}</p>
+              <p className="text-sm text-red-600">{timeline_data.overdue.length} items</p>
+            </div>
+            
+            <div className="bg-orange-100 border border-orange-300 rounded-lg p-4">
+              <h3 className="font-semibold text-orange-800 mb-1">⚡ This Week</h3>
+              <p className="text-2xl font-bold text-orange-600">€{summary.due_this_week_total.toLocaleString()}</p>
+              <p className="text-sm text-orange-600">{timeline_data.due_this_week.length} items</p>
+            </div>
+            
+            <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-4">
+              <h3 className="font-semibold text-yellow-800 mb-1">📅 This Month</h3>
+              <p className="text-2xl font-bold text-yellow-600">€{summary.due_this_month_total.toLocaleString()}</p>
+              <p className="text-sm text-yellow-600">{timeline_data.due_this_month.length} items</p>
+            </div>
+            
+            <div className="bg-blue-100 border border-blue-300 rounded-lg p-4">
+              <h3 className="font-semibold text-blue-800 mb-1">🔮 Later</h3>
+              <p className="text-2xl font-bold text-blue-600">€{summary.due_later_total.toLocaleString()}</p>
+              <p className="text-sm text-blue-600">{timeline_data.due_later.length} items</p>
+            </div>
+            
+            <div className="bg-gray-100 border border-gray-300 rounded-lg p-4">
+              <h3 className="font-semibold text-gray-800 mb-1">❓ No Date</h3>
+              <p className="text-2xl font-bold text-gray-600">€{summary.no_due_date_total.toLocaleString()}</p>
+              <p className="text-sm text-gray-600">{timeline_data.no_due_date.length} items</p>
+            </div>
+          </div>
+
+          {/* Timeline Sections */}
+          <div className="space-y-8">
+            {/* Overdue Section */}
+            {timeline_data.overdue.length > 0 && (
+              <div className="border-l-4 border-red-500 pl-6">
+                <h3 className="text-xl font-bold text-red-700 mb-4">🚨 OVERDUE PAYMENTS</h3>
+                <div className="space-y-3">
+                  {timeline_data.overdue.map((entry) => (
+                    <div key={entry.id} className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h4 className="font-semibold text-gray-900">{entry.category_name}</h4>
+                            <span className="px-2 py-1 bg-red-600 text-white text-xs rounded-full font-medium">
+                              {Math.abs(entry.days_until_due)} DAYS OVERDUE
+                            </span>
+                          </div>
+                          <p className="text-gray-700">{entry.description}</p>
+                          <p className="text-sm text-red-600 font-medium">
+                            Due: {new Date(entry.due_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="text-right ml-4">
+                          <p className="text-2xl font-bold text-red-600 mb-2">€{entry.total_amount.toLocaleString()}</p>
+                          <div className="space-x-2">
+                            <button
+                              onClick={() => markAsPaid(entry.id)}
+                              className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
+                            >
+                              Mark Paid ✓
+                            </button>
+                            <input
+                              type="date"
+                              onChange={(e) => updateDueDate(entry.id, e.target.value)}
+                              className="px-2 py-1 border rounded text-xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Due This Week */}
+            {timeline_data.due_this_week.length > 0 && (
+              <div className="border-l-4 border-orange-500 pl-6">
+                <h3 className="text-xl font-bold text-orange-700 mb-4">⚡ DUE THIS WEEK</h3>
+                <div className="space-y-3">
+                  {timeline_data.due_this_week.map((entry) => (
+                    <div key={entry.id} className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h4 className="font-semibold text-gray-900">{entry.category_name}</h4>
+                            <span className="px-2 py-1 bg-orange-600 text-white text-xs rounded-full font-medium">
+                              IN {entry.days_until_due} DAYS
+                            </span>
+                          </div>
+                          <p className="text-gray-700">{entry.description}</p>
+                          <p className="text-sm text-orange-600 font-medium">
+                            Due: {new Date(entry.due_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="text-right ml-4">
+                          <p className="text-2xl font-bold text-orange-600 mb-2">€{entry.total_amount.toLocaleString()}</p>
+                          <div className="space-x-2">
+                            <button
+                              onClick={() => markAsPaid(entry.id)}
+                              className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
+                            >
+                              Mark Paid ✓
+                            </button>
+                            <input
+                              type="date"
+                              onChange={(e) => updateDueDate(entry.id, e.target.value)}
+                              className="px-2 py-1 border rounded text-xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Due This Month */}
+            {timeline_data.due_this_month.length > 0 && (
+              <div className="border-l-4 border-yellow-500 pl-6">
+                <h3 className="text-xl font-bold text-yellow-700 mb-4">📅 DUE THIS MONTH</h3>
+                <div className="space-y-3">
+                  {timeline_data.due_this_month.map((entry) => (
+                    <div key={entry.id} className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h4 className="font-semibold text-gray-900">{entry.category_name}</h4>
+                            <span className="px-2 py-1 bg-yellow-600 text-white text-xs rounded-full font-medium">
+                              IN {entry.days_until_due} DAYS
+                            </span>
+                          </div>
+                          <p className="text-gray-700">{entry.description}</p>
+                          <p className="text-sm text-yellow-600 font-medium">
+                            Due: {new Date(entry.due_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="text-right ml-4">
+                          <p className="text-2xl font-bold text-yellow-600 mb-2">€{entry.total_amount.toLocaleString()}</p>
+                          <div className="space-x-2">
+                            <button
+                              onClick={() => markAsPaid(entry.id)}
+                              className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
+                            >
+                              Mark Paid ✓
+                            </button>
+                            <input
+                              type="date"
+                              onChange={(e) => updateDueDate(entry.id, e.target.value)}
+                              className="px-2 py-1 border rounded text-xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Due Later & No Due Date - Combined for brevity */}
+            {(timeline_data.due_later.length > 0 || timeline_data.no_due_date.length > 0) && (
+              <div className="border-l-4 border-blue-500 pl-6">
+                <h3 className="text-xl font-bold text-blue-700 mb-4">🔮 FUTURE & UNSCHEDULED</h3>
+                <div className="space-y-3">
+                  {[...timeline_data.due_later, ...timeline_data.no_due_date].map((entry) => (
+                    <div key={entry.id} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900 mb-1">{entry.category_name}</h4>
+                          <p className="text-gray-700">{entry.description}</p>
+                          {entry.due_date ? (
+                            <p className="text-sm text-blue-600 font-medium">
+                              Due: {new Date(entry.due_date).toLocaleDateString()} ({entry.days_until_due} days)
+                            </p>
+                          ) : (
+                            <p className="text-sm text-gray-500">No due date set</p>
+                          )}
+                        </div>
+                        <div className="text-right ml-4">
+                          <p className="text-2xl font-bold text-blue-600 mb-2">€{entry.total_amount.toLocaleString()}</p>
+                          <div className="space-x-2">
+                            <button
+                              onClick={() => markAsPaid(entry.id)}
+                              className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
+                            >
+                              Mark Paid ✓
+                            </button>
+                            <input
+                              type="date"
+                              onChange={(e) => updateDueDate(entry.id, e.target.value)}
+                              className="px-2 py-1 border rounded text-xs"
+                              placeholder="Set due date"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {summary.total_outstanding === 0 && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🎉</div>
+              <h3 className="text-xl font-bold text-green-600 mb-2">All Payments Up to Date!</h3>
+              <p className="text-gray-600">No outstanding payments to track.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 const CostStatusManager = ({ project, onBack }) => {
   const [outstandingCosts, setOutstandingCosts] = useState([]);
   const [paidCosts, setPaidCosts] = useState([]);
