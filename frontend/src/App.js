@@ -140,7 +140,7 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
                   <div className="space-y-2 mb-4">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Budget:</span>
-                      <span className="font-medium">${project.total_budget.toLocaleString()}</span>
+                      <span className="font-medium">€{project.total_budget.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Timeline:</span>
