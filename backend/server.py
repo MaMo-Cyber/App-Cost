@@ -478,10 +478,17 @@ async def get_payment_timeline(project_id: str):
     }
 
 @api_router.put("/cost-entries/{entry_id}/due-date")
-async def update_cost_entry_due_date(entry_id: str, due_date: date):
+async def update_cost_entry_due_date(entry_id: str, due_date: str):
+    # Convert string date to proper format
+    try:
+        parsed_date = datetime.fromisoformat(due_date).date()
+        date_str = parsed_date.isoformat()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    
     result = await db.cost_entries.update_one(
         {"id": entry_id}, 
-        {"$set": {"due_date": due_date.isoformat()}}
+        {"$set": {"due_date": date_str}}
     )
     
     if result.matched_count == 0:
