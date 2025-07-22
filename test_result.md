@@ -185,6 +185,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "✅ COMPREHENSIVE TESTING COMPLETED: Project analytics and summary working excellently. Generated comprehensive summary showing: Total Spent: $9,400, Budget Remaining: $165,600, Budget Utilization: 5.4%, Status: on_track. Phase summaries complete with budget allocation and spending per phase. Cost breakdown by category working correctly (2 categories tracked). Trend data generated with 2 data points. All budget calculations verified and accurate. Status indicators working properly."
+        - working: true
+          agent: "testing"
+          comment: "✅ BUDGET CHART FIX VERIFIED: Project summary endpoint now correctly returns both 'budget_remaining_actual' ($163,100) and 'budget_remaining_committed' ($169,000) fields. Budget calculations verified: Total Spent: $11,900 (Outstanding: $5,900 + Paid: $6,000). Outstanding and paid breakdowns by category working correctly. All budget tracking fields present and accurate for frontend budget chart display."
 
   - task: "Dashboard data aggregation"
     implemented: true
