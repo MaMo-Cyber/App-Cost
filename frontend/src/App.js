@@ -868,6 +868,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
 
   useEffect(() => {
     if (project) {
