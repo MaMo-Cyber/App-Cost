@@ -1,11 +1,38 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 import axios from "axios";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-// Project List Component
+// Project List Component (Fixed deletion)
 const ProjectList = ({ onProjectSelected, onCreateNew }) => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,19 +52,21 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
     }
   };
 
-  const deleteProject = async (projectId) => {
-    if (!window.confirm('Are you sure you want to delete this project? This cannot be undone.')) {
+  const deleteProject = async (projectId, projectName) => {
+    if (!window.confirm(`Are you sure you want to delete "${projectName}"? This cannot be undone.`)) {
       return;
     }
     
     try {
       await axios.delete(`${API}/projects/${projectId}`);
-      fetchProjects();
+      alert('Project deleted successfully!');
+      fetchProjects(); // Refresh the list
     } catch (error) {
       if (error.response?.status === 400) {
         alert('Cannot delete project with existing cost entries or phases. Remove them first.');
       } else {
-        alert('Error deleting project');
+        alert('Error deleting project. Please try again.');
+        console.error('Delete error:', error);
       }
     }
   };
@@ -82,13 +111,17 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
               {projects.map((project) => (
                 <div key={project.id} className="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start mb-4">
-                    <div>
+                    <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900">{project.name}</h3>
                       <p className="text-sm text-gray-600 mt-1">{project.description}</p>
                     </div>
                     <button
-                      onClick={() => deleteProject(project.id)}
-                      className="text-gray-400 hover:text-red-600 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteProject(project.id, project.name);
+                      }}
+                      className="text-gray-400 hover:text-red-600 transition-colors ml-2 p-1"
+                      title={`Delete ${project.name}`}
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -134,7 +167,372 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
   );
 };
 
-// Category Management Component
+// Enhanced Dashboard with Charts
+const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (project) {
+      fetchDashboardData();
+    }
+  }, [project]);
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await axios.get(`${API}/projects/${project.id}/dashboard-data`);
+      setDashboardData(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+
+  if (!dashboardData) return <div>No data available</div>;
+
+  const { summary, monthly_trend, recent_entries } = dashboardData;
+  const statusColors = {
+    on_track: 'bg-green-100 text-green-800 border-green-200',
+    warning: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    over_budget: 'bg-red-100 text-red-800 border-red-200'
+  };
+
+  // Chart configurations
+  const trendLineData = {
+    labels: monthly_trend.map(item => {
+      const [year, month] = item.month.split('-');
+      return new Date(year, month - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    }),
+    datasets: [
+      {
+        label: 'Monthly Spending',
+        data: monthly_trend.map(item => item.amount),
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: 'rgb(59, 130, 246)',
+        pointBorderColor: 'white',
+        pointBorderWidth: 2,
+        pointRadius: 6,
+      }
+    ]
+  };
+
+  const costBreakdownData = {
+    labels: Object.keys(summary.cost_breakdown),
+    datasets: [
+      {
+        label: 'Cost by Category',
+        data: Object.values(summary.cost_breakdown),
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.8)',
+          'rgba(16, 185, 129, 0.8)',
+          'rgba(245, 101, 101, 0.8)',
+          'rgba(251, 191, 36, 0.8)',
+          'rgba(139, 92, 246, 0.8)',
+          'rgba(236, 72, 153, 0.8)',
+        ],
+        borderColor: [
+          'rgb(59, 130, 246)',
+          'rgb(16, 185, 129)',
+          'rgb(245, 101, 101)',
+          'rgb(251, 191, 36)',
+          'rgb(139, 92, 246)',
+          'rgb(236, 72, 153)',
+        ],
+        borderWidth: 2,
+      }
+    ]
+  };
+
+  const budgetComparisonData = {
+    labels: ['Budget Allocated', 'Amount Spent', 'Remaining'],
+    datasets: [
+      {
+        label: 'Budget Analysis',
+        data: [
+          summary.project.total_budget,
+          summary.total_spent,
+          summary.budget_remaining
+        ],
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.8)',
+          summary.budget_utilization > 90 ? 'rgba(245, 101, 101, 0.8)' : 'rgba(16, 185, 129, 0.8)',
+          'rgba(156, 163, 175, 0.8)'
+        ],
+        borderColor: [
+          'rgb(59, 130, 246)',
+          summary.budget_utilization > 90 ? 'rgb(245, 101, 101)' : 'rgb(16, 185, 129)',
+          'rgb(156, 163, 175)'
+        ],
+        borderWidth: 2,
+      }
+    ]
+  };
+
+  // Chart options
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: 'white',
+        bodyColor: 'white',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderWidth: 1,
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: function(value) {
+            return '$' + value.toLocaleString();
+          }
+        }
+      }
+    }
+  };
+
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right',
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: 'white',
+        bodyColor: 'white',
+        callbacks: {
+          label: function(context) {
+            const value = context.parsed;
+            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+            const percentage = ((value / total) * 100).toFixed(1);
+            return `${context.label}: $${value.toLocaleString()} (${percentage}%)`;
+          }
+        }
+      }
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">{project.name}</h1>
+              <p className="text-gray-600 mt-1">{project.description}</p>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={onSwitchProject}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                ← All Projects
+              </button>
+              <button
+                onClick={() => onNavigate('categories')}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Manage Categories
+              </button>
+              <button
+                onClick={() => onNavigate('costs')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Add Costs
+              </button>
+              <button
+                onClick={() => onNavigate('phases')}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Manage Phases
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                </svg>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Budget</p>
+                <p className="text-2xl font-semibold text-gray-900">${summary.project.total_budget.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <div className="flex items-center">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                </svg>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Spent</p>
+                <p className="text-2xl font-semibold text-gray-900">${summary.total_spent.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                </svg>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Remaining</p>
+                <p className="text-2xl font-semibold text-gray-900">${summary.budget_remaining.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <div className="flex items-center">
+              <div className={`p-3 rounded-lg border ${statusColors[summary.status_indicator]}`}>
+                <span className="text-sm font-semibold">
+                  {summary.status_indicator === 'on_track' && 'On Track'}
+                  {summary.status_indicator === 'warning' && 'Warning'}
+                  {summary.status_indicator === 'over_budget' && 'Over Budget'}
+                </span>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Budget Used</p>
+                <p className="text-2xl font-semibold text-gray-900">{summary.budget_utilization.toFixed(1)}%</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Monthly Spending Trend */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">📈 Monthly Spending Trend</h3>
+            <div className="h-64">
+              <Line data={trendLineData} options={chartOptions} />
+            </div>
+          </div>
+
+          {/* Budget Analysis */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">💰 Budget Analysis</h3>
+            <div className="h-64">
+              <Bar data={budgetComparisonData} options={chartOptions} />
+            </div>
+          </div>
+        </div>
+
+        {/* Cost Breakdown & Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Cost Breakdown Pie Chart */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">🎯 Cost Breakdown by Category</h3>
+            <div className="h-80">
+              <Doughnut data={costBreakdownData} options={doughnutOptions} />
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">📋 Recent Cost Entries</h3>
+            <div className="space-y-3 max-h-80 overflow-y-auto">
+              {recent_entries.slice(0, 8).map((entry) => (
+                <div key={entry.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{entry.category_name}</p>
+                    <p className="text-sm text-gray-600">{entry.description || 'No description'}</p>
+                    <p className="text-xs text-gray-500">{new Date(entry.entry_date).toLocaleDateString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-gray-900">${entry.total_amount.toLocaleString()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Phases Progress */}
+        <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">🚀 Phases Progress</h3>
+          <div className="space-y-4">
+            {summary.phases_summary.map((phase) => (
+              <div key={phase.id} className="border rounded-lg p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-medium text-gray-900">{phase.name}</h4>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    phase.status === 'completed' ? 'bg-green-100 text-green-800' :
+                    phase.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                    phase.status === 'delayed' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {phase.status.replace('_', ' ').toUpperCase()}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-600">Allocated</p>
+                    <p className="font-medium">${phase.budget_allocated.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Spent</p>
+                    <p className="font-medium">${phase.amount_spent.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Remaining</p>
+                    <p className="font-medium">${phase.budget_remaining.toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="flex justify-between text-xs text-gray-600 mb-1">
+                    <span>Budget Utilization</span>
+                    <span>{phase.utilization_percentage.toFixed(1)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full ${phase.utilization_percentage > 100 ? 'bg-red-500' : phase.utilization_percentage > 80 ? 'bg-yellow-500' : 'bg-green-500'}`}
+                      style={{ width: `${Math.min(phase.utilization_percentage, 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {summary.phases_summary.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No phases created yet. Click "Manage Phases" to add project phases!</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Category Management Component (unchanged)
 const CategoryManagement = ({ onBack }) => {
   const [categories, setCategories] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -329,282 +727,7 @@ const CategoryManagement = ({ onBack }) => {
   );
 };
 
-// Dashboard Component (Updated with navigation)
-const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (project) {
-      fetchDashboardData();
-    }
-  }, [project]);
-
-  const fetchDashboardData = async () => {
-    try {
-      const response = await axios.get(`${API}/projects/${project.id}/dashboard-data`);
-      setDashboardData(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      setLoading(false);
-    }
-  };
-
-  if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
-
-  if (!dashboardData) return <div>No data available</div>;
-
-  const { summary, monthly_trend, recent_entries } = dashboardData;
-  const statusColors = {
-    on_track: 'bg-green-100 text-green-800 border-green-200',
-    warning: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    over_budget: 'bg-red-100 text-red-800 border-red-200'
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{project.name}</h1>
-              <p className="text-gray-600 mt-1">{project.description}</p>
-            </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={onSwitchProject}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                ← All Projects
-              </button>
-              <button
-                onClick={() => onNavigate('categories')}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                Manage Categories
-              </button>
-              <button
-                onClick={() => onNavigate('costs')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Add Costs
-              </button>
-              <button
-                onClick={() => onNavigate('phases')}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Manage Phases
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Budget</p>
-                <p className="text-2xl font-semibold text-gray-900">${summary.project.total_budget.toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Spent</p>
-                <p className="text-2xl font-semibold text-gray-900">${summary.total_spent.toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Remaining</p>
-                <p className="text-2xl font-semibold text-gray-900">${summary.budget_remaining.toLocaleString()}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <div className={`p-3 rounded-lg border ${statusColors[summary.status_indicator]}`}>
-                <span className="text-sm font-semibold">
-                  {summary.status_indicator === 'on_track' && 'On Track'}
-                  {summary.status_indicator === 'warning' && 'Warning'}
-                  {summary.status_indicator === 'over_budget' && 'Over Budget'}
-                </span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Budget Used</p>
-                <p className="text-2xl font-semibold text-gray-900">{summary.budget_utilization.toFixed(1)}%</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Budget vs Actual Chart */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Budget vs Actual</h3>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm text-gray-600 mb-1">
-                  <span>Total Budget</span>
-                  <span>${summary.project.total_budget.toLocaleString()}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div 
-                    className="bg-blue-600 h-3 rounded-full"
-                    style={{ width: '100%' }}
-                  ></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-sm text-gray-600 mb-1">
-                  <span>Amount Spent</span>
-                  <span>${summary.total_spent.toLocaleString()}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div 
-                    className={`h-3 rounded-full ${summary.budget_utilization > 100 ? 'bg-red-500' : summary.budget_utilization > 75 ? 'bg-yellow-500' : 'bg-green-500'}`}
-                    style={{ width: `${Math.min(summary.budget_utilization, 100)}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Cost Breakdown */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Cost Breakdown</h3>
-            <div className="space-y-3">
-              {Object.entries(summary.cost_breakdown).map(([category, amount]) => (
-                <div key={category} className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">{category}</span>
-                  <div className="flex items-center">
-                    <span className="text-sm font-medium text-gray-900">${amount.toLocaleString()}</span>
-                    <div className="w-20 bg-gray-200 rounded-full h-2 ml-3">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full"
-                        style={{ width: `${(amount / summary.total_spent) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Phases Status */}
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Phases Progress</h3>
-          <div className="space-y-4">
-            {summary.phases_summary.map((phase) => (
-              <div key={phase.id} className="border rounded-lg p-4">
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="font-medium text-gray-900">{phase.name}</h4>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    phase.status === 'completed' ? 'bg-green-100 text-green-800' :
-                    phase.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                    phase.status === 'delayed' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {phase.status.replace('_', ' ').toUpperCase()}
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-600">Allocated</p>
-                    <p className="font-medium">${phase.budget_allocated.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Spent</p>
-                    <p className="font-medium">${phase.amount_spent.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Remaining</p>
-                    <p className="font-medium">${phase.budget_remaining.toLocaleString()}</p>
-                  </div>
-                </div>
-                <div className="mt-3">
-                  <div className="flex justify-between text-xs text-gray-600 mb-1">
-                    <span>Budget Utilization</span>
-                    <span>{phase.utilization_percentage.toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full ${phase.utilization_percentage > 100 ? 'bg-red-500' : phase.utilization_percentage > 80 ? 'bg-yellow-500' : 'bg-green-500'}`}
-                      style={{ width: `${Math.min(phase.utilization_percentage, 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Cost Entries</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {recent_entries.slice(0, 5).map((entry) => (
-                  <tr key={entry.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(entry.entry_date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {entry.category_name}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {entry.description || 'No description'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      ${entry.total_amount.toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Project Setup Component (Updated)
+// Project Setup Component (unchanged)
 const ProjectSetup = ({ onProjectCreated, onCancel }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -732,7 +855,7 @@ const ProjectSetup = ({ onProjectCreated, onCancel }) => {
   );
 };
 
-// Cost Entry Component (Updated)
+// Cost Entry Component (unchanged)
 const CostEntry = ({ project, onBack }) => {
   const [categories, setCategories] = useState([]);
   const [phases, setPhases] = useState([]);
@@ -983,7 +1106,7 @@ const CostEntry = ({ project, onBack }) => {
   );
 };
 
-// Phase Management Component (kept same as before)
+// Phase Management Component (unchanged)
 const PhaseManagement = ({ project, onBack }) => {
   const [phases, setPhases] = useState([]);
   const [formData, setFormData] = useState({
