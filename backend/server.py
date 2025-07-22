@@ -517,7 +517,11 @@ async def update_cost_entry_due_date(entry_id: str, due_date: str):
     return {"message": "Due date updated successfully"}
 
 @api_router.put("/cost-entries/{entry_id}/status")
-async def update_cost_entry_status(entry_id: str, status: str):
+async def update_cost_entry_status(entry_id: str, request: Request):
+    # Get status from request body
+    body = await request.body()
+    status = body.decode('utf-8').strip('"')  # Remove quotes if present
+    
     # Validate status
     if status not in ["outstanding", "paid"]:
         raise HTTPException(status_code=400, detail="Status must be 'outstanding' or 'paid'")
