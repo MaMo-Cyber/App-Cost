@@ -109,18 +109,19 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {projects.map((project) => (
-                <div key={project.id} className="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow">
+                <div key={project.id} className="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow border">
                   <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
+                    <div className="flex-1 mr-4">
                       <h3 className="text-lg font-semibold text-gray-900">{project.name}</h3>
                       <p className="text-sm text-gray-600 mt-1">{project.description}</p>
                     </div>
                     <button
                       onClick={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         deleteProject(project.id, project.name);
                       }}
-                      className="text-gray-400 hover:text-red-600 transition-colors ml-2 p-1"
+                      className="text-gray-500 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50"
                       title={`Delete ${project.name}`}
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,9 +137,9 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Timeline:</span>
-                      <span>{new Date(project.start_date).toLocaleDateString()} - {new Date(project.end_date).toLocaleDateString()}</span>
+                      <span className="text-xs">{new Date(project.start_date).toLocaleDateString()} - {new Date(project.end_date).toLocaleDateString()}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-sm items-center">
                       <span className="text-gray-600">Status:</span>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         project.status === 'active' ? 'bg-green-100 text-green-800' :
@@ -151,12 +152,25 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
                     </div>
                   </div>
                   
-                  <button
-                    onClick={() => onProjectSelected(project)}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Open Project
-                  </button>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => onProjectSelected(project)}
+                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    >
+                      Open Project
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        deleteProject(project.id, project.name);
+                      }}
+                      className="px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors font-medium text-sm"
+                      title={`Delete ${project.name}`}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
