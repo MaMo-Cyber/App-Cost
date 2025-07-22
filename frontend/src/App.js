@@ -263,7 +263,196 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
   );
 };
 
-// Cost Breakdown Modal Component
+// Outstanding/Paid Costs Management Component
+const CostStatusManager = ({ project, onBack }) => {
+  const [outstandingCosts, setOutstandingCosts] = useState([]);
+  const [paidCosts, setPaidCosts] = useState([]);
+  const [activeTab, setActiveTab] = useState('outstanding');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCostsByStatus();
+  }, []);
+
+  const fetchCostsByStatus = async () => {
+    try {
+      const [outstandingResponse, paidResponse] = await Promise.all([
+        axios.get(`${API}/projects/${project.id}/cost-entries/outstanding`),
+        axios.get(`${API}/projects/${project.id}/cost-entries/paid`)
+      ]);
+      
+      setOutstandingCosts(outstandingResponse.data);
+      setPaidCosts(paidResponse.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching costs by status:', error);
+      setLoading(false);
+    }
+  };
+
+  const updateCostStatus = async (entryId, newStatus) => {
+    try {
+      await axios.put(`${API}/cost-entries/${entryId}/status`, {}, {
+        params: { status: newStatus }
+      });
+      fetchCostsByStatus(); // Refresh the lists
+      alert(`Cost entry marked as ${newStatus}!`);
+    } catch (error) {
+      console.error('Error updating cost status:', error);
+      alert('Error updating cost status');
+    }
+  };
+
+  const outstandingTotal = outstandingCosts.reduce((sum, cost) => sum + cost.total_amount, 0);
+  const paidTotal = paidCosts.reduce((sum, cost) => sum + cost.total_amount, 0);
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border p-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Cost Status Management</h2>
+              <p className="text-gray-600">Track outstanding and paid costs for {project.name}</p>
+            </div>
+            <button
+              onClick={onBack}
+              className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              ← Back to Dashboard
+            </button>
+          </div>
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-red-50 p-6 rounded-lg border border-red-200">
+              <h3 className="text-lg font-semibold text-red-800 mb-2">Outstanding Costs</h3>
+              <p className="text-3xl font-bold text-red-600">€{outstandingTotal.toLocaleString()}</p>
+              <p className="text-sm text-red-600">{outstandingCosts.length} entries</p>
+            </div>
+            
+            <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+              <h3 className="text-lg font-semibold text-green-800 mb-2">Paid Costs</h3>
+              <p className="text-3xl font-bold text-green-600">€{paidTotal.toLocaleString()}</p>
+              <p className="text-sm text-green-600">{paidCosts.length} entries</p>
+            </div>
+            
+            <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+              <h3 className="text-lg font-semibold text-blue-800 mb-2">Total Costs</h3>
+              <p className="text-3xl font-bold text-blue-600">€{(outstandingTotal + paidTotal).toLocaleString()}</p>
+              <p className="text-sm text-blue-600">{(outstandingCosts.length + paidCosts.length)} entries</p>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="border-b border-gray-200 mb-6">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab('outstanding')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'outstanding'
+                    ? 'border-red-500 text-red-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Outstanding ({outstandingCosts.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('paid')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'paid'
+                    ? 'border-green-500 text-green-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Paid ({paidCosts.length})
+              </button>
+            </nav>
+          </div>
+
+          {/* Cost Lists */}
+          <div className="space-y-4">
+            {activeTab === 'outstanding' && (
+              <div>
+                {outstandingCosts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No outstanding costs! 🎉</p>
+                  </div>
+                ) : (
+                  outstandingCosts.map((cost) => (
+                    <div key={cost.id} className="border border-red-200 rounded-lg p-4 bg-red-50">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h3 className="font-semibold text-gray-900">{cost.category_name}</h3>
+                            <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full font-medium">
+                              OUTSTANDING
+                            </span>
+                          </div>
+                          <p className="text-gray-700">{cost.description || 'No description'}</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Entry Date: {new Date(cost.entry_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="text-right ml-4">
+                          <p className="text-2xl font-bold text-red-600 mb-2">€{cost.total_amount.toLocaleString()}</p>
+                          <button
+                            onClick={() => updateCostStatus(cost.id, 'paid')}
+                            className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
+                          >
+                            Mark as Paid ✓
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {activeTab === 'paid' && (
+              <div>
+                {paidCosts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No paid costs yet.</p>
+                  </div>
+                ) : (
+                  paidCosts.map((cost) => (
+                    <div key={cost.id} className="border border-green-200 rounded-lg p-4 bg-green-50">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h3 className="font-semibold text-gray-900">{cost.category_name}</h3>
+                            <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
+                              PAID
+                            </span>
+                          </div>
+                          <p className="text-gray-700">{cost.description || 'No description'}</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Entry Date: {new Date(cost.entry_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="text-right ml-4">
+                          <p className="text-2xl font-bold text-green-600 mb-2">€{cost.total_amount.toLocaleString()}</p>
+                          <button
+                            onClick={() => updateCostStatus(cost.id, 'outstanding')}
+                            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
+                          >
+                            Mark Outstanding ⚠️
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 const CostBreakdownModal = ({ isOpen, onClose, project, categoryName }) => {
   const [categoryData, setCategoryData] = useState(null);
   const [loading, setLoading] = useState(false);
