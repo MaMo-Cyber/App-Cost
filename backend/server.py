@@ -428,6 +428,13 @@ async def get_project_summary(project_id: str):
     cost_entries = await db.cost_entries.find({"project_id": project_id}).to_list(1000)
     total_spent = sum(entry.get("total_amount", 0) for entry in cost_entries)
     
+    # Calculate outstanding vs paid
+    outstanding_entries = [entry for entry in cost_entries if entry.get("status") == "outstanding"]
+    paid_entries = [entry for entry in cost_entries if entry.get("status") == "paid"]
+    
+    total_outstanding = sum(entry.get("total_amount", 0) for entry in outstanding_entries)
+    total_paid = sum(entry.get("total_amount", 0) for entry in paid_entries)
+    
     # Get phases
     phases = await db.phases.find({"project_id": project_id}).to_list(1000)
     
