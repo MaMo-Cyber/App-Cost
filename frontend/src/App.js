@@ -314,6 +314,8 @@ const CostBreakdownModal = ({ isOpen, onClose, project, categoryName }) => {
 const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   useEffect(() => {
     if (project) {
@@ -330,6 +332,16 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
       console.error('Error fetching dashboard data:', error);
       setLoading(false);
     }
+  };
+
+  const handleCategoryClick = (categoryName) => {
+    setSelectedCategory(categoryName);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedCategory(null);
   };
 
   if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
