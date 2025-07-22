@@ -652,7 +652,21 @@ async def get_dashboard_data(project_id: str):
     
     # Convert recent entries to proper format (remove MongoDB ObjectId)
     recent_entries = []
-    for entry in sorted(cost_entries, key=lambda x: x.get("created_at", ""), reverse=True)[:10]:
+    
+    # Sort entries by created_at, handling both datetime and string formats
+    def get_sort_key(entry):
+        created_at = entry.get("created_at")
+        if isinstance(created_at, str):
+            try:
+                return datetime.fromisoformat(created_at)
+            except:
+                return datetime.min
+        elif isinstance(created_at, datetime):
+            return created_at
+        else:
+            return datetime.min
+    
+    for entry in sorted(cost_entries, key=get_sort_key, reverse=True)[:10]:
         # Remove MongoDB _id field if present
         if "_id" in entry:
             del entry["_id"]
