@@ -376,10 +376,18 @@ async def get_dashboard_data(project_id: str):
     
     monthly_trend = [{"month": month, "amount": amount} for month, amount in sorted(monthly_costs.items())]
     
+    # Convert recent entries to proper format (remove MongoDB ObjectId)
+    recent_entries = []
+    for entry in sorted(cost_entries, key=lambda x: x.get("created_at", ""), reverse=True)[:10]:
+        # Remove MongoDB _id field if present
+        if "_id" in entry:
+            del entry["_id"]
+        recent_entries.append(entry)
+    
     return {
         "summary": summary,
         "monthly_trend": monthly_trend,
-        "recent_entries": sorted(cost_entries, key=lambda x: x.get("created_at", ""), reverse=True)[:10]
+        "recent_entries": recent_entries
     }
 
 # Initialize default cost categories
