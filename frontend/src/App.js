@@ -1468,7 +1468,7 @@ const PhaseManagement = ({ project, onBack }) => {
                 <div className="grid grid-cols-4 gap-4 text-sm">
                   <div>
                     <p className="text-gray-600">Budget Allocated</p>
-                    <p className="font-medium text-lg">${phase.budget_allocation.toLocaleString()}</p>
+                    <p className="font-medium text-lg">€{phase.budget_allocation.toLocaleString()}</p>
                   </div>
                   <div>
                     <p className="text-gray-600">Start Date</p>
