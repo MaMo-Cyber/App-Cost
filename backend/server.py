@@ -116,6 +116,8 @@ class CostEntry(BaseModel):
     unit_price: Optional[float] = None
     # Total amount (calculated or manual)
     total_amount: float
+    # Payment status
+    status: CostStatus = CostStatus.OUTSTANDING
     entry_date: date = Field(default_factory=date.today)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -129,6 +131,7 @@ class CostEntryCreate(BaseModel):
     quantity: Optional[float] = None
     unit_price: Optional[float] = None
     total_amount: Optional[float] = None
+    status: CostStatus = CostStatus.OUTSTANDING
     entry_date: Optional[date] = None
 
 class ProjectSummary(BaseModel):
