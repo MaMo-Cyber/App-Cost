@@ -599,35 +599,62 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
           </div>
         </div>
 
-        {/* Cost Breakdown & Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Cost Breakdown Pie Chart */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">🎯 Cost Breakdown by Category</h3>
-            <div className="h-80">
-              <Doughnut data={costBreakdownData} options={doughnutOptions} />
+          {/* Cost Breakdown & Recent Activity */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Cost Breakdown Pie Chart */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">🎯 Cost Breakdown by Category</h3>
+              <div className="h-80">
+                <Doughnut data={costBreakdownData} options={doughnutOptions} />
+              </div>
+              <div className="mt-4 space-y-2">
+                <p className="text-sm font-medium text-gray-700 mb-2">Click on a category to see detailed cost entries:</p>
+                {Object.entries(summary.cost_breakdown).map(([category, amount]) => (
+                  <button
+                    key={category}
+                    onClick={() => handleCategoryClick(category)}
+                    className="w-full flex justify-between items-center p-3 bg-gray-50 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer border"
+                    title={`Click to see all ${category} cost entries`}
+                  >
+                    <span className="font-medium text-gray-900">{category}</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg font-bold text-blue-600">${amount.toLocaleString()}</span>
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                      </svg>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">📋 Recent Cost Entries</h3>
+              <div className="space-y-3 max-h-80 overflow-y-auto">
+                {recent_entries.slice(0, 8).map((entry) => (
+                  <div key={entry.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">{entry.category_name}</p>
+                      <p className="text-sm text-gray-600">{entry.description || 'No description'}</p>
+                      <p className="text-xs text-gray-500">{new Date(entry.entry_date).toLocaleDateString()}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-gray-900">${entry.total_amount.toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Recent Activity */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">📋 Recent Cost Entries</h3>
-            <div className="space-y-3 max-h-80 overflow-y-auto">
-              {recent_entries.slice(0, 8).map((entry) => (
-                <div key={entry.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-gray-900">{entry.category_name}</p>
-                    <p className="text-sm text-gray-600">{entry.description || 'No description'}</p>
-                    <p className="text-xs text-gray-500">{new Date(entry.entry_date).toLocaleDateString()}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">${entry.total_amount.toLocaleString()}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+          {/* Cost Breakdown Modal */}
+          <CostBreakdownModal
+            isOpen={modalOpen}
+            onClose={closeModal}
+            project={project}
+            categoryName={selectedCategory}
+          />
 
         {/* Phases Progress */}
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
