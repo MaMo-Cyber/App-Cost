@@ -753,6 +753,170 @@ async def import_all_data(backup_data: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
 
+@api_router.get("/projects/{project_id}/export-pdf")
+async def export_project_pdf(project_id: str):
+    """Export project summary and charts as PDF"""
+    try:
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.lib import colors
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib.units import inch
+        from io import BytesIO
+        import matplotlib.pyplot as plt
+        import base64
+        
+        # Get project summary
+        summary = await get_project_summary(project_id)
+        project = summary.project
+        
+        # Create PDF buffer
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+        
+        # Get styles
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=18, spaceAfter=30)
+        heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading2'], fontSize=14, spaceAfter=12)
+        
+        # Build PDF content
+        story = []
+        
+        # Title
+        story.append(Paragraph(f"Project Cost Report: {project.name}", title_style))
+        story.append(Spacer(1, 12))
+        
+        # Project Information
+        story.append(Paragraph("Project Information", heading_style))
+        project_data = [
+            ["Project Name", project.name],
+            ["Description", project.description or "No description"],
+            ["Total Budget", f"€{project.total_budget:,.2f}"],
+            ["Start Date", str(project.start_date)],
+            ["End Date", str(project.end_date)],
+            ["Status", project.status.title()],
+            ["Budget Utilization", f"{summary.budget_utilization:.1f}%"],
+            ["Project Status", summary.status_indicator.replace('_', ' ').title()]
+        ]
+        
+        project_table = Table(project_data, colWidths=[2*inch, 4*inch])
+        project_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.grey),
+            ('TEXTCOLOR', (0, 0), (0, -1), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('BACKGROUND', (1, 0), (1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        
+        story.append(project_table)
+        story.append(Spacer(1, 20))
+        
+        # Financial Summary
+        story.append(Paragraph("Financial Summary", heading_style))
+        financial_data = [
+            ["Metric", "Amount"],
+            ["Total Budget", f"€{project.total_budget:,.2f}"],
+            ["Total Spent", f"€{summary.total_spent:,.2f}"],
+            ["Total Outstanding", f"€{summary.total_outstanding:,.2f}"],
+            ["Total Paid", f"€{summary.total_paid:,.2f}"],
+            ["Remaining (Actual)", f"€{summary.budget_remaining_actual:,.2f}"],
+            ["Available (If Paid)", f"€{summary.budget_remaining_committed:,.2f}"]
+        ]
+        
+        financial_table = Table(financial_data, colWidths=[3*inch, 2*inch])
+        financial_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        
+        story.append(financial_table)
+        story.append(Spacer(1, 20))
+        
+        # Cost Breakdown by Category
+        if summary.cost_breakdown:
+            story.append(Paragraph("Cost Breakdown by Category", heading_style))
+            breakdown_data = [["Category", "Amount", "Percentage"]]
+            total_costs = sum(summary.cost_breakdown.values())
+            for category, amount in summary.cost_breakdown.items():
+                percentage = (amount / total_costs * 100) if total_costs > 0 else 0
+                breakdown_data.append([category, f"€{amount:,.2f}", f"{percentage:.1f}%"])
+            
+            breakdown_table = Table(breakdown_data, colWidths=[3*inch, 2*inch, 1*inch])
+            breakdown_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            
+            story.append(breakdown_table)
+            story.append(Spacer(1, 20))
+        
+        # Phases Summary
+        if summary.phases_summary:
+            story.append(Paragraph("Phases Summary", heading_style))
+            phases_data = [["Phase", "Budget Allocated", "Amount Spent", "Remaining", "Status"]]
+            for phase in summary.phases_summary:
+                phases_data.append([
+                    phase['name'],
+                    f"€{phase['budget_allocated']:,.2f}",
+                    f"€{phase['amount_spent']:,.2f}",
+                    f"€{phase['budget_remaining']:,.2f}",
+                    phase['status'].replace('_', ' ').title()
+                ])
+            
+            phases_table = Table(phases_data, colWidths=[2*inch, 1.2*inch, 1.2*inch, 1.2*inch, 1*inch])
+            phases_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            
+            story.append(phases_table)
+        
+        # Build PDF
+        doc.build(story)
+        
+        # Get PDF content
+        pdf_content = buffer.getvalue()
+        buffer.close()
+        
+        # Return PDF response
+        from fastapi.responses import Response
+        return Response(
+            content=pdf_content,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=project_report_{project.name.replace(' ', '_')}.pdf"}
+        )
+        
+    except ImportError:
+        # Fallback if reportlab is not installed
+        raise HTTPException(status_code=501, detail="PDF generation not available. Please install reportlab: pip install reportlab matplotlib")
+    except Exception as e:
+        logging.error(f"PDF export error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")
+
 # Initialize default cost categories
 @api_router.post("/initialize-default-categories")
 async def initialize_default_categories():
