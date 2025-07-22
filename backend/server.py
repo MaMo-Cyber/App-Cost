@@ -419,7 +419,13 @@ async def create_cost_entry(entry: CostEntryCreate):
         "created_at": entry_obj.created_at.isoformat()
     }
     
+    # Add debug logging before MongoDB insertion
+    logging.info(f"MongoDB data being inserted: {mongo_data}")
+    logging.info(f"Date types - due_date: {type(mongo_data.get('due_date'))}, entry_date: {type(mongo_data.get('entry_date'))}, created_at: {type(mongo_data.get('created_at'))}")
+    
     await db.cost_entries.insert_one(mongo_data)
+    
+    # Return the entry_obj directly - FastAPI will handle serialization
     return entry_obj
 
 @api_router.get("/projects/{project_id}/cost-entries", response_model=List[CostEntry])
