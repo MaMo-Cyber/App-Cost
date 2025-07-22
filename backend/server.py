@@ -377,6 +377,34 @@ async def get_cost_entries_by_category(project_id: str, category_name: str):
         "entries": detailed_entries
     }
 
+@api_router.get("/projects/{project_id}/cost-entries/outstanding")
+async def get_outstanding_cost_entries(project_id: str):
+    entries = await db.cost_entries.find({
+        "project_id": project_id,
+        "status": "outstanding"
+    }).to_list(1000)
+    return [CostEntry(**entry) for entry in entries]
+
+@api_router.get("/projects/{project_id}/cost-entries/paid")
+async def get_paid_cost_entries(project_id: str):
+    entries = await db.cost_entries.find({
+        "project_id": project_id,
+        "status": "paid"
+    }).to_list(1000)
+    return [CostEntry(**entry) for entry in entries]
+
+@api_router.put("/cost-entries/{entry_id}/status")
+async def update_cost_entry_status(entry_id: str, status: CostStatus):
+    result = await db.cost_entries.update_one(
+        {"id": entry_id}, 
+        {"$set": {"status": status}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Cost entry not found")
+    
+    return {"message": "Cost entry status updated"}
+
 @api_router.delete("/cost-entries/{entry_id}")
 async def delete_cost_entry(entry_id: str):
     result = await db.cost_entries.delete_one({"id": entry_id})
