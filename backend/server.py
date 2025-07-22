@@ -322,15 +322,27 @@ async def create_cost_entry(entry: CostEntryCreate):
         else:
             raise HTTPException(status_code=400, detail="Cannot calculate total amount")
     
+    # Handle date fields properly - convert to string for MongoDB
     if not entry.entry_date:
-        entry_dict["entry_date"] = date.today()
+        entry_dict["entry_date"] = date.today().isoformat()
+    elif isinstance(entry_dict.get("entry_date"), date):
+        entry_dict["entry_date"] = entry_dict["entry_date"].isoformat()
+    
+    # Handle due_date properly
+    if entry_dict.get("due_date"):
+        if isinstance(entry_dict["due_date"], date):
+            entry_dict["due_date"] = entry_dict["due_date"].isoformat()
+    else:
+        entry_dict["due_date"] = None
+    
+    # Ensure status has default value
+    if not entry_dict.get("status"):
+        entry_dict["status"] = "outstanding"
     
     entry_obj = CostEntry(**entry_dict)
     
-    # Convert date objects to strings for MongoDB storage
+    # Convert CostEntry object to dict for MongoDB insertion
     entry_data = entry_obj.dict()
-    if isinstance(entry_data.get('entry_date'), date):
-        entry_data['entry_date'] = entry_data['entry_date'].isoformat()
     
     await db.cost_entries.insert_one(entry_data)
     return entry_obj
