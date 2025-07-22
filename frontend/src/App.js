@@ -784,7 +784,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 rounded-lg">
@@ -801,14 +801,28 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
 
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <div className="flex items-center">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="p-2 bg-gray-100 rounded-lg">
+                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
                 </svg>
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Spent</p>
                 <p className="text-2xl font-semibold text-gray-900">€{summary.total_spent.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-red-200 bg-red-50">
+            <div className="flex items-center">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 18.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-red-700">Outstanding</p>
+                <p className="text-2xl font-semibold text-red-800">€{summary.total_outstanding.toLocaleString()}</p>
               </div>
             </div>
           </div>
