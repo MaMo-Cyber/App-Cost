@@ -257,7 +257,13 @@ async def create_cost_entry(entry: CostEntryCreate):
         entry_dict["entry_date"] = date.today()
     
     entry_obj = CostEntry(**entry_dict)
-    await db.cost_entries.insert_one(entry_obj.dict())
+    
+    # Convert date objects to strings for MongoDB storage
+    entry_data = entry_obj.dict()
+    if isinstance(entry_data.get('entry_date'), date):
+        entry_data['entry_date'] = entry_data['entry_date'].isoformat()
+    
+    await db.cost_entries.insert_one(entry_data)
     return entry_obj
 
 @api_router.get("/projects/{project_id}/cost-entries", response_model=List[CostEntry])
