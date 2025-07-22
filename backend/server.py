@@ -400,6 +400,83 @@ async def get_paid_cost_entries(project_id: str):
     }).to_list(1000)
     return [CostEntry(**entry) for entry in entries]
 
+@api_router.get("/projects/{project_id}/payment-timeline")
+async def get_payment_timeline(project_id: str):
+    """Get outstanding costs organized by due dates for timeline view"""
+    outstanding_entries = await db.cost_entries.find({
+        "project_id": project_id,
+        "status": "outstanding"
+    }).to_list(1000)
+    
+    today = date.today()
+    timeline_data = {
+        "overdue": [],
+        "due_this_week": [],
+        "due_this_month": [],
+        "due_later": [],
+        "no_due_date": []
+    }
+    
+    for entry in outstanding_entries:
+        entry_data = {
+            "id": entry["id"],
+            "category_name": entry["category_name"],
+            "description": entry.get("description", ""),
+            "total_amount": entry["total_amount"],
+            "due_date": entry.get("due_date"),
+            "entry_date": entry["entry_date"],
+            "days_until_due": None
+        }
+        
+        due_date = entry.get("due_date")
+        if not due_date:
+            timeline_data["no_due_date"].append(entry_data)
+            continue
+            
+        # Convert due_date string to date object if needed
+        if isinstance(due_date, str):
+            due_date = datetime.fromisoformat(due_date).date()
+        
+        days_until_due = (due_date - today).days
+        entry_data["days_until_due"] = days_until_due
+        
+        if days_until_due < 0:
+            timeline_data["overdue"].append(entry_data)
+        elif days_until_due <= 7:
+            timeline_data["due_this_week"].append(entry_data)
+        elif days_until_due <= 30:
+            timeline_data["due_this_month"].append(entry_data)
+        else:
+            timeline_data["due_later"].append(entry_data)
+    
+    # Calculate totals for each category
+    timeline_summary = {
+        "overdue_total": sum(entry["total_amount"] for entry in timeline_data["overdue"]),
+        "due_this_week_total": sum(entry["total_amount"] for entry in timeline_data["due_this_week"]),
+        "due_this_month_total": sum(entry["total_amount"] for entry in timeline_data["due_this_month"]),
+        "due_later_total": sum(entry["total_amount"] for entry in timeline_data["due_later"]),
+        "no_due_date_total": sum(entry["total_amount"] for entry in timeline_data["no_due_date"]),
+        "total_outstanding": sum(entry["total_amount"] for entry in outstanding_entries)
+    }
+    
+    return {
+        "timeline_data": timeline_data,
+        "summary": timeline_summary,
+        "today": today.isoformat()
+    }
+
+@api_router.put("/cost-entries/{entry_id}/due-date")
+async def update_cost_entry_due_date(entry_id: str, due_date: date):
+    result = await db.cost_entries.update_one(
+        {"id": entry_id}, 
+        {"$set": {"due_date": due_date.isoformat()}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Cost entry not found")
+    
+    return {"message": "Due date updated successfully"}
+
 @api_router.put("/cost-entries/{entry_id}/status")
 async def update_cost_entry_status(entry_id: str, status: CostStatus):
     result = await db.cost_entries.update_one(
