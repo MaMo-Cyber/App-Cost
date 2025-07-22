@@ -194,20 +194,18 @@ async def update_project(project_id: str, project_update: ProjectCreate):
 
 @api_router.delete("/projects/{project_id}")
 async def delete_project(project_id: str):
-    # Check if project has cost entries or phases
-    cost_entries = await db.cost_entries.find({"project_id": project_id}).to_list(1)
-    phases = await db.phases.find({"project_id": project_id}).to_list(1)
+    # First, delete all related cost entries
+    await db.cost_entries.delete_many({"project_id": project_id})
     
-    if cost_entries or phases:
-        raise HTTPException(
-            status_code=400,
-            detail="Cannot delete project with existing cost entries or phases. Remove them first."
-        )
+    # Then, delete all related phases
+    await db.phases.delete_many({"project_id": project_id})
     
+    # Finally, delete the project itself
     result = await db.projects.delete_one({"id": project_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Project not found")
-    return {"message": "Project deleted successfully"}
+    
+    return {"message": "Project and all related data deleted successfully"}
 
 # Phase routes
 @api_router.post("/phases", response_model=Phase)
