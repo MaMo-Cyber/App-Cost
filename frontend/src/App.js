@@ -680,7 +680,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                   </div>
                   <div>
                     <p className="text-gray-600">Spent</p>
-                    <p className="font-medium">${phase.amount_spent.toLocaleString()}</p>
+                    <p className="font-medium">€{phase.amount_spent.toLocaleString()}</p>
                   </div>
                   <div>
                     <p className="text-gray-600">Remaining</p>
