@@ -326,6 +326,50 @@ async def get_project_cost_entries(project_id: str):
     entries = await db.cost_entries.find({"project_id": project_id}).to_list(1000)
     return [CostEntry(**entry) for entry in entries]
 
+@api_router.get("/projects/{project_id}/cost-entries/by-category/{category_name}")
+async def get_cost_entries_by_category(project_id: str, category_name: str):
+    entries = await db.cost_entries.find({
+        "project_id": project_id,
+        "category_name": category_name
+    }).to_list(1000)
+    
+    # Convert entries for better frontend display
+    detailed_entries = []
+    for entry in entries:
+        detailed_entry = {
+            "id": entry["id"],
+            "description": entry.get("description", "No description"),
+            "entry_date": entry["entry_date"],
+            "total_amount": entry["total_amount"],
+            "created_at": entry["created_at"]
+        }
+        
+        # Add specific details based on entry type
+        if entry.get("hours") and entry.get("hourly_rate"):
+            detailed_entry["details"] = f"{entry['hours']} hours × ${entry['hourly_rate']}/hr"
+            detailed_entry["type"] = "hourly"
+        elif entry.get("quantity") and entry.get("unit_price"):
+            detailed_entry["details"] = f"{entry['quantity']} units × ${entry['unit_price']} each"
+            detailed_entry["type"] = "material"
+        else:
+            detailed_entry["details"] = "Fixed amount"
+            detailed_entry["type"] = "fixed"
+        
+        # Add phase info if exists
+        if entry.get("phase_id"):
+            phase = await db.phases.find_one({"id": entry["phase_id"]})
+            if phase:
+                detailed_entry["phase_name"] = phase["name"]
+        
+        detailed_entries.append(detailed_entry)
+    
+    return {
+        "category_name": category_name,
+        "total_entries": len(detailed_entries),
+        "total_amount": sum(entry["total_amount"] for entry in detailed_entries),
+        "entries": detailed_entries
+    }
+
 @api_router.delete("/cost-entries/{entry_id}")
 async def delete_cost_entry(entry_id: str):
     result = await db.cost_entries.delete_one({"id": entry_id})
