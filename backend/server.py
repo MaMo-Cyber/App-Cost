@@ -191,7 +191,15 @@ async def update_project(project_id: str, project_update: ProjectCreate):
 async def create_phase(phase: PhaseCreate):
     phase_dict = phase.dict()
     phase_obj = Phase(**phase_dict)
-    await db.phases.insert_one(phase_obj.dict())
+    
+    # Convert date objects to strings for MongoDB storage
+    phase_data = phase_obj.dict()
+    if isinstance(phase_data.get('start_date'), date):
+        phase_data['start_date'] = phase_data['start_date'].isoformat()
+    if isinstance(phase_data.get('end_date'), date):
+        phase_data['end_date'] = phase_data['end_date'].isoformat()
+    
+    await db.phases.insert_one(phase_data)
     return phase_obj
 
 @api_router.get("/projects/{project_id}/phases", response_model=List[Phase])
