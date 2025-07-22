@@ -479,6 +479,77 @@ async def get_dashboard_data(project_id: str):
         "recent_entries": recent_entries
     }
 
+@api_router.get("/export-all-data")
+async def export_all_data():
+    """Export all data for backup"""
+    try:
+        # Get all projects
+        projects = await db.projects.find().to_list(1000)
+        
+        # Get all cost categories
+        categories = await db.cost_categories.find().to_list(1000)
+        
+        # Get all phases
+        phases = await db.phases.find().to_list(1000)
+        
+        # Get all cost entries
+        cost_entries = await db.cost_entries.find().to_list(1000)
+        
+        # Create backup data structure
+        backup_data = {
+            "export_date": datetime.utcnow().isoformat(),
+            "version": "1.0",
+            "data": {
+                "projects": projects,
+                "cost_categories": categories,
+                "phases": phases,
+                "cost_entries": cost_entries
+            }
+        }
+        
+        return backup_data
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
+
+@api_router.post("/import-all-data")
+async def import_all_data(backup_data: dict):
+    """Import data from backup"""
+    try:
+        # Clear existing data (optional - could be made configurable)
+        await db.projects.delete_many({})
+        await db.cost_categories.delete_many({})
+        await db.phases.delete_many({})
+        await db.cost_entries.delete_many({})
+        
+        # Import data
+        data = backup_data.get("data", {})
+        
+        if data.get("projects"):
+            await db.projects.insert_many(data["projects"])
+            
+        if data.get("cost_categories"):
+            await db.cost_categories.insert_many(data["cost_categories"])
+            
+        if data.get("phases"):
+            await db.phases.insert_many(data["phases"])
+            
+        if data.get("cost_entries"):
+            await db.cost_entries.insert_many(data["cost_entries"])
+        
+        return {
+            "message": "Data imported successfully",
+            "imported": {
+                "projects": len(data.get("projects", [])),
+                "categories": len(data.get("cost_categories", [])),
+                "phases": len(data.get("phases", [])),
+                "cost_entries": len(data.get("cost_entries", []))
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
+
 # Initialize default cost categories
 @api_router.post("/initialize-default-categories")
 async def initialize_default_categories():
