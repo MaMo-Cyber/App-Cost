@@ -304,129 +304,68 @@ async def update_cost_category(category_id: str, category_update: CostCategoryCr
 # Cost entry routes
 @api_router.post("/cost-entries", response_model=CostEntry)
 async def create_cost_entry(entry: CostEntryCreate):
-    entry_dict = entry.dict()
-    
-    # Get category info
-    category = await db.cost_categories.find_one({"id": entry.category_id})
-    if not category:
-        raise HTTPException(status_code=404, detail="Cost category not found")
-    
-    entry_dict["category_name"] = category["name"]
-    
-    # Calculate total amount if not provided
-    if not entry.total_amount:
-        if entry.hours and entry.hourly_rate:
-            entry_dict["total_amount"] = entry.hours * entry.hourly_rate
-        elif entry.quantity and entry.unit_price:
-            entry_dict["total_amount"] = entry.quantity * entry.unit_price
+    try:
+        entry_dict = entry.dict()
+        
+        # Get category info
+        category = await db.cost_categories.find_one({"id": entry.category_id})
+        if not category:
+            raise HTTPException(status_code=404, detail="Cost category not found")
+        
+        entry_dict["category_name"] = category["name"]
+        
+        # Calculate total amount if not provided
+        if not entry.total_amount:
+            if entry.hours and entry.hourly_rate:
+                entry_dict["total_amount"] = entry.hours * entry.hourly_rate
+            elif entry.quantity and entry.unit_price:
+                entry_dict["total_amount"] = entry.quantity * entry.unit_price
+            else:
+                raise HTTPException(status_code=400, detail="Cannot calculate total amount")
+        
+        # Ensure status has default value
+        if not entry_dict.get("status"):
+            entry_dict["status"] = "outstanding"
+        
+        # Handle entry_date - always store as string
+        if entry_dict.get("entry_date"):
+            if hasattr(entry_dict["entry_date"], 'isoformat'):
+                entry_dict["entry_date"] = entry_dict["entry_date"].isoformat()
         else:
-            raise HTTPException(status_code=400, detail="Cannot calculate total amount")
-    
-    # Handle date fields properly - convert ALL dates to strings
-    entry_date = entry_dict.get("entry_date")
-    if entry_date:
-        if isinstance(entry_date, str):
-            # Try to parse and reformat to ensure consistency
-            try:
-                parsed_date = datetime.fromisoformat(entry_date).date()
-                entry_dict["entry_date"] = parsed_date.isoformat()
-            except:
-                entry_dict["entry_date"] = entry_date
-        elif hasattr(entry_date, 'isoformat'):
-            entry_dict["entry_date"] = entry_date.isoformat()
+            entry_dict["entry_date"] = date.today().isoformat()
+        
+        # Handle due_date - always store as string or None
+        if entry_dict.get("due_date"):
+            if hasattr(entry_dict["due_date"], 'isoformat'):
+                entry_dict["due_date"] = entry_dict["due_date"].isoformat()
         else:
-            entry_dict["entry_date"] = str(entry_date)
-    else:
-        entry_dict["entry_date"] = date.today().isoformat()
-    
-    # Handle due_date properly
-    due_date = entry_dict.get("due_date")
-    if due_date:
-        if isinstance(due_date, str):
-            try:
-                parsed_date = datetime.fromisoformat(due_date).date()
-                entry_dict["due_date"] = parsed_date.isoformat()
-            except:
-                entry_dict["due_date"] = due_date
-        elif hasattr(due_date, 'isoformat'):
-            entry_dict["due_date"] = due_date.isoformat()
-        else:
-            entry_dict["due_date"] = str(due_date)
-    else:
-        entry_dict["due_date"] = None
-    
-    # Ensure status has default value
-    if not entry_dict.get("status"):
-        entry_dict["status"] = "outstanding"
-    
-    # Add created_at as string
-    entry_dict["created_at"] = datetime.utcnow().isoformat()
-    
-    # Create the entry object with proper date conversion
-    # Convert string dates back to date objects for the CostEntry model
-    entry_date_obj = None
-    if entry_dict.get("entry_date"):
-        if isinstance(entry_dict["entry_date"], str):
-            entry_date_obj = datetime.fromisoformat(entry_dict["entry_date"]).date()
-        else:
-            entry_date_obj = entry_dict["entry_date"]
-    else:
-        entry_date_obj = date.today()
-    
-    due_date_obj = None
-    if entry_dict.get("due_date"):
-        if isinstance(entry_dict["due_date"], str):
-            due_date_obj = datetime.fromisoformat(entry_dict["due_date"]).date()
-        else:
-            due_date_obj = entry_dict["due_date"]
-    
-    created_at_obj = datetime.utcnow()
-    
-    entry_obj = CostEntry(
-        id=str(uuid.uuid4()),
-        project_id=entry_dict["project_id"],
-        phase_id=entry_dict.get("phase_id"),
-        category_id=entry_dict["category_id"],
-        category_name=entry_dict["category_name"],
-        description=entry_dict.get("description", ""),
-        hours=entry_dict.get("hours"),
-        hourly_rate=entry_dict.get("hourly_rate"),
-        quantity=entry_dict.get("quantity"),
-        unit_price=entry_dict.get("unit_price"),
-        total_amount=entry_dict["total_amount"],
-        status=entry_dict["status"],
-        due_date=due_date_obj,
-        entry_date=entry_date_obj,
-        created_at=created_at_obj
-    )
-    
-    # Prepare data for MongoDB - ensure all dates are strings
-    mongo_data = {
-        "id": entry_obj.id,
-        "project_id": entry_obj.project_id,
-        "phase_id": entry_obj.phase_id,
-        "category_id": entry_obj.category_id,
-        "category_name": entry_obj.category_name,
-        "description": entry_obj.description,
-        "hours": entry_obj.hours,
-        "hourly_rate": entry_obj.hourly_rate,
-        "quantity": entry_obj.quantity,
-        "unit_price": entry_obj.unit_price,
-        "total_amount": entry_obj.total_amount,
-        "status": entry_obj.status,
-        "due_date": entry_obj.due_date.isoformat() if entry_obj.due_date else None,
-        "entry_date": entry_obj.entry_date.isoformat(),
-        "created_at": entry_obj.created_at.isoformat()
-    }
-    
-    # Add debug logging before MongoDB insertion
-    logging.info(f"MongoDB data being inserted: {mongo_data}")
-    logging.info(f"Date types - due_date: {type(mongo_data.get('due_date'))}, entry_date: {type(mongo_data.get('entry_date'))}, created_at: {type(mongo_data.get('created_at'))}")
-    
-    await db.cost_entries.insert_one(mongo_data)
-    
-    # Return the entry_obj directly - FastAPI will handle serialization
-    return entry_obj
+            entry_dict["due_date"] = None
+        
+        # Generate ID and created_at as string
+        entry_dict["id"] = str(uuid.uuid4())
+        entry_dict["created_at"] = datetime.utcnow().isoformat()
+        
+        # Insert directly to MongoDB with all dates as strings
+        await db.cost_entries.insert_one(entry_dict)
+        
+        # Create return object with proper date conversion for Pydantic model
+        return_data = entry_dict.copy()
+        
+        # Convert string dates back to date objects for the response model
+        if return_data.get("entry_date"):
+            return_data["entry_date"] = datetime.fromisoformat(return_data["entry_date"]).date()
+        if return_data.get("due_date"):
+            return_data["due_date"] = datetime.fromisoformat(return_data["due_date"]).date()
+        if return_data.get("created_at"):
+            return_data["created_at"] = datetime.fromisoformat(return_data["created_at"])
+        
+        return CostEntry(**return_data)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error creating cost entry: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error creating cost entry: {str(e)}")
 
 @api_router.get("/projects/{project_id}/cost-entries", response_model=List[CostEntry])
 async def get_project_cost_entries(project_id: str):
