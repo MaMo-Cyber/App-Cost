@@ -145,12 +145,31 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
               <h1 className="text-3xl font-bold text-gray-900">Project Cost Tracker</h1>
               <p className="text-gray-600 mt-2">Select a project to manage or create a new one</p>
             </div>
-            <button
-              onClick={onCreateNew}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              + New Project
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={exportAllData}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                title="Export all data as backup"
+              >
+                📥 Export Backup
+              </button>
+              <label className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-medium cursor-pointer">
+                📤 Import Backup
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={importData}
+                  disabled={importing}
+                  className="hidden"
+                />
+              </label>
+              <button
+                onClick={onCreateNew}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                + New Project
+              </button>
+            </div>
           </div>
 
           {projects.length === 0 ? (
