@@ -285,8 +285,8 @@ const PaymentTimeline = ({ project, onBack }) => {
 
   const updateDueDate = async (entryId, newDueDate) => {
     try {
-      await axios.put(`${API}/cost-entries/${entryId}/due-date`, {}, {
-        params: { due_date: newDueDate }
+      await axios.put(`${API}/cost-entries/${entryId}/due-date`, newDueDate, {
+        headers: { 'Content-Type': 'application/json' }
       });
       fetchTimelineData(); // Refresh timeline
       alert('Due date updated successfully!');
@@ -298,8 +298,8 @@ const PaymentTimeline = ({ project, onBack }) => {
 
   const markAsPaid = async (entryId) => {
     try {
-      await axios.put(`${API}/cost-entries/${entryId}/status`, {}, {
-        params: { status: 'paid' }
+      await axios.put(`${API}/cost-entries/${entryId}/status`, 'paid', {
+        headers: { 'Content-Type': 'application/json' }
       });
       fetchTimelineData(); // Refresh timeline
       alert('Cost marked as paid!');
