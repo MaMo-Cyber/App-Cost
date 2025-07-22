@@ -640,7 +640,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                       <p className="text-xs text-gray-500">{new Date(entry.entry_date).toLocaleDateString()}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-gray-900">${entry.total_amount.toLocaleString()}</p>
+                      <p className="font-semibold text-gray-900">€{entry.total_amount.toLocaleString()}</p>
                     </div>
                   </div>
                 ))}
