@@ -957,14 +957,14 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
   };
 
   const budgetComparisonData = {
-    labels: ['Budget Allocated', 'Amount Spent', 'Remaining'],
+    labels: ['Budget Allocated', 'Amount Spent', 'Remaining (Actual)'],
     datasets: [
       {
         label: 'Budget Analysis',
         data: [
           summary.project.total_budget,
           summary.total_spent,
-          summary.budget_remaining
+          summary.budget_remaining_actual
         ],
         backgroundColor: [
           'rgba(59, 130, 246, 0.8)',
