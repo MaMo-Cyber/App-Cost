@@ -362,7 +362,26 @@ async def create_cost_entry(entry: CostEntryCreate):
     # Add created_at as string
     entry_dict["created_at"] = datetime.utcnow().isoformat()
     
-    # Create the entry object but don't convert dates back
+    # Create the entry object with proper date conversion
+    # Convert string dates back to date objects for the CostEntry model
+    entry_date_obj = None
+    if entry_dict.get("entry_date"):
+        if isinstance(entry_dict["entry_date"], str):
+            entry_date_obj = datetime.fromisoformat(entry_dict["entry_date"]).date()
+        else:
+            entry_date_obj = entry_dict["entry_date"]
+    else:
+        entry_date_obj = date.today()
+    
+    due_date_obj = None
+    if entry_dict.get("due_date"):
+        if isinstance(entry_dict["due_date"], str):
+            due_date_obj = datetime.fromisoformat(entry_dict["due_date"]).date()
+        else:
+            due_date_obj = entry_dict["due_date"]
+    
+    created_at_obj = datetime.utcnow()
+    
     entry_obj = CostEntry(
         id=str(uuid.uuid4()),
         project_id=entry_dict["project_id"],
@@ -376,9 +395,9 @@ async def create_cost_entry(entry: CostEntryCreate):
         unit_price=entry_dict.get("unit_price"),
         total_amount=entry_dict["total_amount"],
         status=entry_dict["status"],
-        due_date=entry_dict.get("due_date"),
-        entry_date=entry_dict["entry_date"],
-        created_at=entry_dict["created_at"]
+        due_date=due_date_obj,
+        entry_date=entry_date_obj,
+        created_at=created_at_obj
     )
     
     # Prepare data for MongoDB - ensure all dates are strings
