@@ -496,10 +496,14 @@ async def get_project_summary(project_id: str):
     return ProjectSummary(
         project=Project(**project),
         total_spent=total_spent,
+        total_outstanding=total_outstanding,
+        total_paid=total_paid,
         budget_remaining=project["total_budget"] - total_spent,
         budget_utilization=budget_utilization,
         phases_summary=phases_summary,
         cost_breakdown=cost_breakdown,
+        outstanding_breakdown=outstanding_breakdown,
+        paid_breakdown=paid_breakdown,
         trend_data=trend_list,
         status_indicator=status_indicator
     )
