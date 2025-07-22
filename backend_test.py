@@ -360,8 +360,8 @@ def test_cost_entries():
     return True
 
 def test_project_analytics():
-    """Test project analytics and summary"""
-    print("\n🧪 Testing Project Analytics & Summary")
+    """Test project analytics and summary with budget chart fix"""
+    print("\n🧪 Testing Project Analytics & Summary with Budget Fields")
     
     if not test_data['project_id']:
         print("  ❌ No project ID available for analytics testing")
@@ -375,24 +375,65 @@ def test_project_analytics():
     
     print(f"  ✅ Project Summary Retrieved:")
     print(f"    💰 Total Spent: ${summary['total_spent']:,.2f}")
-    print(f"    💳 Budget Remaining: ${summary['budget_remaining']:,.2f}")
+    print(f"    💳 Total Outstanding: ${summary.get('total_outstanding', 0):,.2f}")
+    print(f"    💵 Total Paid: ${summary.get('total_paid', 0):,.2f}")
+    
+    # Check for the specific budget fields that were fixed
+    if 'budget_remaining_actual' not in summary:
+        print("  ❌ Missing 'budget_remaining_actual' field in summary")
+        return False
+    
+    if 'budget_remaining_committed' not in summary:
+        print("  ❌ Missing 'budget_remaining_committed' field in summary")
+        return False
+    
+    print(f"    🎯 Budget Remaining Actual: ${summary['budget_remaining_actual']:,.2f}")
+    print(f"    🎯 Budget Remaining Committed: ${summary['budget_remaining_committed']:,.2f}")
     print(f"    📊 Budget Utilization: {summary['budget_utilization']:.1f}%")
     print(f"    🚦 Status: {summary['status_indicator']}")
     print(f"    📈 Phases: {len(summary['phases_summary'])}")
     print(f"    🏷️ Cost Categories: {len(summary['cost_breakdown'])}")
     print(f"    📅 Trend Data Points: {len(summary['trend_data'])}")
     
-    # Validate calculations
+    # Validate budget calculations
     if summary['total_spent'] <= 0:
         print("  ❌ Total spent should be greater than 0")
         return False
     
-    expected_remaining = summary['project']['total_budget'] - summary['total_spent']
-    if abs(summary['budget_remaining'] - expected_remaining) > 0.01:
-        print("  ❌ Budget remaining calculation incorrect")
+    # Validate budget_remaining_actual calculation (Budget - Total Spent including outstanding)
+    expected_remaining_actual = summary['project']['total_budget'] - summary['total_spent']
+    if abs(summary['budget_remaining_actual'] - expected_remaining_actual) > 0.01:
+        print(f"  ❌ Budget remaining actual calculation incorrect: expected {expected_remaining_actual}, got {summary['budget_remaining_actual']}")
+        return False
+    
+    # Validate budget_remaining_committed calculation (Budget - Total Paid excluding outstanding)
+    expected_remaining_committed = summary['project']['total_budget'] - summary['total_paid']
+    if abs(summary['budget_remaining_committed'] - expected_remaining_committed) > 0.01:
+        print(f"  ❌ Budget remaining committed calculation incorrect: expected {expected_remaining_committed}, got {summary['budget_remaining_committed']}")
         return False
     
     print("  ✅ Budget calculations are correct")
+    print("  ✅ Both budget_remaining_actual and budget_remaining_committed fields present")
+    
+    # Check outstanding vs paid breakdown
+    if 'outstanding_breakdown' not in summary:
+        print("  ❌ Missing outstanding_breakdown field")
+        return False
+    
+    if 'paid_breakdown' not in summary:
+        print("  ❌ Missing paid_breakdown field")
+        return False
+    
+    print(f"  ✅ Outstanding breakdown categories: {len(summary['outstanding_breakdown'])}")
+    print(f"  ✅ Paid breakdown categories: {len(summary['paid_breakdown'])}")
+    
+    # Verify total_outstanding + total_paid = total_spent
+    calculated_total = summary['total_outstanding'] + summary['total_paid']
+    if abs(calculated_total - summary['total_spent']) > 0.01:
+        print(f"  ❌ Outstanding + Paid should equal Total Spent: {calculated_total} != {summary['total_spent']}")
+        return False
+    
+    print("  ✅ Outstanding + Paid = Total Spent verification passed")
     
     # Check phases summary
     if summary['phases_summary']:
