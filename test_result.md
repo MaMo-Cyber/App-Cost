@@ -275,9 +275,7 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus:
-    - "Cost entry system with calculations"
-    - "Dashboard with budget tracking"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
