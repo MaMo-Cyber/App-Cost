@@ -250,7 +250,7 @@ const CostBreakdownModal = ({ isOpen, onClose, project, categoryName }) => {
                     <p className="text-sm text-gray-600">Total Amount</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-blue-600">${(categoryData.total_amount / categoryData.total_entries).toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-blue-600">€{(categoryData.total_amount / categoryData.total_entries).toFixed(2)}</p>
                     <p className="text-sm text-gray-600">Average per Entry</p>
                   </div>
                 </div>
