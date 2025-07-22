@@ -896,6 +896,32 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
     setSelectedCategory(null);
   };
 
+  const exportToPDF = async () => {
+    try {
+      const response = await axios.get(`${API}/projects/${project.id}/export-pdf`, {
+        responseType: 'blob'
+      });
+      
+      // Create downloadable file
+      const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
+      
+      // Create download link
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${project.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_report_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      alert('✅ PDF report exported successfully! Check your downloads folder.');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      alert('❌ Error exporting PDF report. Please try again.');
+    }
+  };
+
   if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
   if (!dashboardData) return <div>No data available</div>;
