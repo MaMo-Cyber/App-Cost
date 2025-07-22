@@ -580,8 +580,8 @@ const CostStatusManager = ({ project, onBack }) => {
 
   const updateCostStatus = async (entryId, newStatus) => {
     try {
-      await axios.put(`${API}/cost-entries/${entryId}/status`, {}, {
-        params: { status: newStatus }
+      await axios.put(`${API}/cost-entries/${entryId}/status`, newStatus, {
+        headers: { 'Content-Type': 'application/json' }
       });
       fetchCostsByStatus(); // Refresh the lists
       alert(`Cost entry marked as ${newStatus}!`);
