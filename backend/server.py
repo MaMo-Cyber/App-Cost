@@ -175,6 +175,12 @@ async def update_project(project_id: str, project_update: ProjectCreate):
     project_dict = project_update.dict()
     project_dict["updated_at"] = datetime.utcnow()
     
+    # Convert date objects to strings for MongoDB storage
+    if isinstance(project_dict.get('start_date'), date):
+        project_dict['start_date'] = project_dict['start_date'].isoformat()
+    if isinstance(project_dict.get('end_date'), date):
+        project_dict['end_date'] = project_dict['end_date'].isoformat()
+    
     result = await db.projects.update_one(
         {"id": project_id}, 
         {"$set": project_dict}
