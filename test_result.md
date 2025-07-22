@@ -251,14 +251,9 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Project CRUD operations"
-    - "Cost category management"
-    - "Cost entry system with calculations"
-    - "Project analytics and summary"
-    - "Dashboard data aggregation"
+  current_focus: []
   stuck_tasks: []
-  test_all: true
+  test_all: false
   test_priority: "high_first"
 
 agent_communication:
