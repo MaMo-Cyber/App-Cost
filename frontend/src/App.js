@@ -2134,7 +2134,7 @@ const PhaseManagement = ({ project, onBack }) => {
 // Main App Component
 function App() {
   const [currentProject, setCurrentProject] = useState(null);
-  const [currentView, setCurrentView] = useState('projectList'); // projectList, setup, dashboard, costs, phases, categories, cost-status
+  const [currentView, setCurrentView] = useState('projectList'); // projectList, setup, dashboard, costs, phases, categories, cost-status, payment-timeline
 
   useEffect(() => {
     // Check if there are existing projects, but default to project list
