@@ -530,7 +530,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Budget</p>
-                <p className="text-2xl font-semibold text-gray-900">${summary.project.total_budget.toLocaleString()}</p>
+                <p className="text-2xl font-semibold text-gray-900">€{summary.project.total_budget.toLocaleString()}</p>
               </div>
             </div>
           </div>
