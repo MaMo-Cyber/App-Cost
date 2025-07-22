@@ -755,16 +755,17 @@ async def import_all_data(backup_data: dict):
 
 @api_router.get("/projects/{project_id}/export-pdf")
 async def export_project_pdf(project_id: str):
-    """Export project summary and charts as PDF"""
+    """Export project summary and charts as PDF with graphics"""
     try:
         from reportlab.lib.pagesizes import letter, A4
         from reportlab.lib import colors
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as ReportLabImage
         from reportlab.lib.units import inch
         from io import BytesIO
         import matplotlib.pyplot as plt
-        import base64
+        import matplotlib
+        matplotlib.use('Agg')  # Use non-interactive backend
         
         # Get project summary
         summary = await get_project_summary(project_id)
@@ -842,9 +843,92 @@ async def export_project_pdf(project_id: str):
         story.append(financial_table)
         story.append(Spacer(1, 20))
         
-        # Cost Breakdown by Category
+        # Generate Budget Analysis Chart
+        try:
+            plt.style.use('default')
+            fig, ax = plt.subplots(figsize=(10, 6))
+            
+            categories = ['Budget Allocated', 'Amount Spent', 'Remaining (Actual)']
+            amounts = [project.total_budget, summary.total_spent, summary.budget_remaining_actual]
+            colors_chart = ['#3B82F6', '#10B981', '#6B7280']
+            
+            bars = ax.bar(categories, amounts, color=colors_chart, alpha=0.8)
+            ax.set_ylabel('Amount (€)', fontsize=12)
+            ax.set_title('Budget Analysis', fontsize=14, fontweight='bold', pad=20)
+            ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'€{x:,.0f}'))
+            
+            # Add value labels on bars
+            for bar, amount in zip(bars, amounts):
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height,
+                       f'€{amount:,.0f}',
+                       ha='center', va='bottom', fontweight='bold')
+            
+            plt.xticks(rotation=45, ha='right')
+            plt.tight_layout()
+            
+            # Save chart to BytesIO
+            chart_buffer = BytesIO()
+            plt.savefig(chart_buffer, format='png', dpi=150, bbox_inches='tight')
+            chart_buffer.seek(0)
+            plt.close()
+            
+            # Add chart to PDF
+            story.append(Paragraph("Budget Analysis Chart", heading_style))
+            chart_image = ReportLabImage(chart_buffer, width=6*inch, height=3.6*inch)
+            story.append(chart_image)
+            story.append(Spacer(1, 20))
+            
+        except Exception as e:
+            logging.warning(f"Could not generate budget chart: {e}")
+        
+        # Generate Cost Breakdown Pie Chart
         if summary.cost_breakdown:
-            story.append(Paragraph("Cost Breakdown by Category", heading_style))
+            try:
+                fig, ax = plt.subplots(figsize=(8, 8))
+                
+                categories = list(summary.cost_breakdown.keys())
+                amounts = list(summary.cost_breakdown.values())
+                colors_pie = plt.cm.Set3(range(len(categories)))
+                
+                wedges, texts, autotexts = ax.pie(amounts, labels=categories, autopct='%1.1f%%', 
+                                                 colors=colors_pie, startangle=90)
+                
+                # Improve text formatting
+                for autotext in autotexts:
+                    autotext.set_color('white')
+                    autotext.set_fontweight('bold')
+                    autotext.set_fontsize(10)
+                
+                for text in texts:
+                    text.set_fontsize(10)
+                
+                ax.set_title('Cost Breakdown by Category', fontsize=14, fontweight='bold', pad=20)
+                
+                # Add legend with amounts
+                legend_labels = [f'{cat}: €{amt:,.0f}' for cat, amt in zip(categories, amounts)]
+                ax.legend(legend_labels, loc='center left', bbox_to_anchor=(1, 0.5))
+                
+                plt.tight_layout()
+                
+                # Save chart to BytesIO
+                pie_chart_buffer = BytesIO()
+                plt.savefig(pie_chart_buffer, format='png', dpi=150, bbox_inches='tight')
+                pie_chart_buffer.seek(0)
+                plt.close()
+                
+                # Add chart to PDF
+                story.append(Paragraph("Cost Breakdown by Category", heading_style))
+                pie_chart_image = ReportLabImage(pie_chart_buffer, width=6*inch, height=6*inch)
+                story.append(pie_chart_image)
+                story.append(Spacer(1, 20))
+                
+            except Exception as e:
+                logging.warning(f"Could not generate pie chart: {e}")
+        
+        # Cost Breakdown Table
+        if summary.cost_breakdown:
+            story.append(Paragraph("Detailed Cost Breakdown", heading_style))
             breakdown_data = [["Category", "Amount", "Percentage"]]
             total_costs = sum(summary.cost_breakdown.values())
             for category, amount in summary.cost_breakdown.items():
