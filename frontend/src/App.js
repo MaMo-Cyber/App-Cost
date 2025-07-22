@@ -1078,7 +1078,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 rounded-lg">
@@ -1121,32 +1121,46 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-green-200 bg-green-50">
             <div className="flex items-center">
               <div className="p-2 bg-green-100 rounded-lg">
                 <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4"></path>
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Remaining</p>
-                <p className="text-2xl font-semibold text-gray-900">€{summary.budget_remaining.toLocaleString()}</p>
+                <p className="text-sm font-medium text-green-700">Paid Only</p>
+                <p className="text-2xl font-semibold text-green-800">€{summary.total_paid.toLocaleString()}</p>
               </div>
             </div>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <div className="flex items-center">
-              <div className={`p-3 rounded-lg border ${statusColors[summary.status_indicator]}`}>
-                <span className="text-sm font-semibold">
-                  {summary.status_indicator === 'on_track' && 'On Track'}
-                  {summary.status_indicator === 'warning' && 'Warning'}
-                  {summary.status_indicator === 'over_budget' && 'Over Budget'}
-                </span>
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4"></path>
+                </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Budget Used</p>
-                <p className="text-2xl font-semibold text-gray-900">{summary.budget_utilization.toFixed(1)}%</p>
+                <p className="text-sm font-medium text-gray-600">Remaining (Actual)</p>
+                <p className="text-2xl font-semibold text-gray-900">€{summary.budget_remaining_actual.toLocaleString()}</p>
+                <p className="text-xs text-gray-500">After all commitments</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-yellow-200 bg-yellow-50">
+            <div className="flex items-center">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-yellow-700">Available (If Paid)</p>
+                <p className="text-2xl font-semibold text-yellow-800">€{summary.budget_remaining_committed.toLocaleString()}</p>
+                <p className="text-xs text-yellow-600">Excluding outstanding</p>
               </div>
             </div>
           </div>
