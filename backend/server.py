@@ -45,6 +45,10 @@ class PhaseStatus(str, Enum):
     COMPLETED = "completed"
     DELAYED = "delayed"
 
+class CostStatus(str, Enum):
+    OUTSTANDING = "outstanding"
+    PAID = "paid"
+
 # Models
 class Project(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
