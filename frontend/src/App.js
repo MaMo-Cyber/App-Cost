@@ -2887,6 +2887,13 @@ function App() {
             onBack={() => setCurrentView('dashboard')} 
           />
         );
+      case 'editEstimates':
+        return (
+          <EditCostEstimates 
+            project={currentProject} 
+            onBack={() => setCurrentView('dashboard')} 
+          />
+        );
       default:
         return (
           <ProjectList 
