@@ -1811,7 +1811,12 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
         {/* EVM Timeline Chart */}
         {summary.evm_metrics && (
           <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">📈 EVM Timeline Analysis</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">📈 {t('evmPerformanceOverTime')}</h3>
+              <div className="text-xs text-gray-500">
+                {t('lastUpdated')}: {new Date().toLocaleString(language === 'de' ? 'de-DE' : 'en-US')}
+              </div>
+            </div>
             
             <div className="h-96 mb-4">
               <Line 
@@ -1819,7 +1824,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                   labels: dashboardData.evm_timeline?.timeline_data?.map(point => point.month) || [],
                   datasets: [
                     {
-                      label: 'Planned Value (PV)',
+                      label: t('plannedValue'),
                       data: dashboardData.evm_timeline?.timeline_data?.map(point => point.planned_value) || [],
                       borderColor: 'rgb(59, 130, 246)',
                       backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -1828,7 +1833,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                       tension: 0.1
                     },
                     {
-                      label: 'Earned Value (EV)',
+                      label: t('earnedValue'),
                       data: dashboardData.evm_timeline?.timeline_data?.map(point => point.earned_value) || [],
                       borderColor: 'rgb(16, 185, 129)',
                       backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -1837,7 +1842,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                       tension: 0.1
                     },
                     {
-                      label: 'Actual Cost (AC)',
+                      label: t('actualCost'),
                       data: dashboardData.evm_timeline?.timeline_data?.map(point => point.actual_cost) || [],
                       borderColor: 'rgb(239, 68, 68)',
                       backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -1846,7 +1851,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                       tension: 0.1
                     },
                     {
-                      label: 'Estimate at Completion (EAC)',
+                      label: t('eacForecast'),
                       data: dashboardData.evm_timeline?.timeline_data?.map(point => point.eac) || [],
                       borderColor: 'rgb(147, 51, 234)',
                       backgroundColor: 'rgba(147, 51, 234, 0.1)',
@@ -1869,18 +1874,18 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                       display: true,
                       title: {
                         display: true,
-                        text: 'Timeline (Months)'
+                        text: t('timeline')
                       }
                     },
                     y: {
                       display: true,
                       title: {
                         display: true,
-                        text: 'Cost (€)'
+                        text: t('costEur')
                       },
                       ticks: {
                         callback: function(value) {
-                          return '€' + value.toLocaleString();
+                          return '€' + value.toLocaleString(language === 'de' ? 'de-DE' : 'en-US');
                         }
                       }
                     }
@@ -1888,7 +1893,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                   plugins: {
                     title: {
                       display: true,
-                      text: 'EVM Performance Over Time'
+                      text: t('evmPerformanceOverTime')
                     },
                     legend: {
                       position: 'top',
@@ -1896,7 +1901,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                     tooltip: {
                       callbacks: {
                         label: function(context) {
-                          return context.dataset.label + ': €' + context.parsed.y.toLocaleString();
+                          return context.dataset.label + ': €' + context.parsed.y.toLocaleString(language === 'de' ? 'de-DE' : 'en-US');
                         }
                       }
                     },
@@ -1910,7 +1915,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                           borderWidth: 3,
                           borderDash: [10, 5],
                           label: {
-                            content: `Cost Overrun Predicted (Month ${dashboardData.evm_timeline.overrun_point.month_number})`,
+                            content: `${t('costOverrunPredicted')} (${language === 'de' ? 'Monat' : 'Month'} ${dashboardData.evm_timeline.overrun_point.month_number})`,
                             enabled: true,
                             position: 'top'
                           }
