@@ -328,6 +328,7 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     fetchProjects();
