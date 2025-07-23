@@ -1403,15 +1403,19 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{project.name}</h1>
+              <div className="flex items-center space-x-4 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900">{project.name}</h1>
+                <CurrentDateTime />
+              </div>
               <p className="text-gray-600 mt-1">{project.description}</p>
             </div>
             <div className="flex items-center space-x-3">
+              <LanguageToggle />
               <button
                 onClick={onSwitchProject}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                ← Projects
+                ← {t('projects')}
               </button>
               
               {/* Actions Menu */}
