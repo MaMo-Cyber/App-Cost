@@ -1698,7 +1698,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
         {/* EVM Metrics Section */}
         {summary.evm_metrics && (
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Earned Value Management (EVM)</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('earnedValueManagement')}</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-white p-4 rounded-lg shadow-sm border">
@@ -1708,7 +1708,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
                   </div>
-                  <p className="text-xs font-medium text-gray-600">Planned Value (PV)</p>
+                  <p className="text-xs font-medium text-gray-600">{t('plannedValue')}</p>
                   <p className="text-lg font-semibold text-gray-900">€{summary.evm_metrics.planned_value.toLocaleString()}</p>
                 </div>
               </div>
@@ -1720,7 +1720,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                     </svg>
                   </div>
-                  <p className="text-xs font-medium text-yellow-700">Earned Value (EV)</p>
+                  <p className="text-xs font-medium text-yellow-700">{t('earnedValue')}</p>
                   <p className="text-lg font-semibold text-yellow-800">€{summary.evm_metrics.earned_value.toLocaleString()}</p>
                 </div>
               </div>
@@ -1732,7 +1732,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                     </svg>
                   </div>
-                  <p className="text-xs font-medium text-red-700">Actual Cost (AC)</p>
+                  <p className="text-xs font-medium text-red-700">{t('actualCost')}</p>
                   <p className="text-lg font-semibold text-red-800">€{summary.evm_metrics.actual_cost.toLocaleString()}</p>
                 </div>
               </div>
@@ -1744,7 +1744,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                   </div>
-                  <p className="text-xs font-medium text-purple-700">EAC Forecast</p>
+                  <p className="text-xs font-medium text-purple-700">{t('eacForecast')}</p>
                   <p className="text-lg font-semibold text-purple-800">€{summary.evm_metrics.estimate_at_completion.toLocaleString()}</p>
                 </div>
               </div>
@@ -1755,10 +1755,10 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
               <div className="bg-white p-4 rounded-lg shadow-sm border">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Cost Performance Index (CPI)</p>
+                    <p className="text-sm font-medium text-gray-600">{t('costPerformanceIndex')}</p>
                     <p className="text-2xl font-bold text-gray-900">{summary.evm_metrics.cost_performance_index.toFixed(3)}</p>
                     <p className={`text-sm ${summary.evm_metrics.cost_performance_index >= 1 ? 'text-green-600' : 'text-red-600'}`}>
-                      {summary.evm_metrics.cost_status}
+                      {summary.evm_metrics.cost_performance_index >= 1 ? t('underBudget') : t('overBudget')}
                     </p>
                   </div>
                   <div className={`p-2 rounded-lg ${summary.evm_metrics.cost_performance_index >= 1 ? 'bg-green-100' : 'bg-red-100'}`}>
@@ -1772,10 +1772,10 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
               <div className="bg-white p-4 rounded-lg shadow-sm border">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Schedule Performance Index (SPI)</p>
+                    <p className="text-sm font-medium text-gray-600">{t('schedulePerformanceIndex')}</p>
                     <p className="text-2xl font-bold text-gray-900">{summary.evm_metrics.schedule_performance_index.toFixed(3)}</p>
                     <p className={`text-sm ${summary.evm_metrics.schedule_performance_index >= 1 ? 'text-green-600' : 'text-red-600'}`}>
-                      {summary.evm_metrics.schedule_status}
+                      {summary.evm_metrics.schedule_performance_index >= 1 ? t('ahead') : t('behind')}
                     </p>
                   </div>
                   <div className={`p-2 rounded-lg ${summary.evm_metrics.schedule_performance_index >= 1 ? 'bg-green-100' : 'bg-red-100'}`}>
@@ -1789,12 +1789,12 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
               <div className="bg-white p-4 rounded-lg shadow-sm border">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Variance at Completion</p>
+                    <p className="text-sm font-medium text-gray-600">{t('varianceAtCompletion')}</p>
                     <p className={`text-2xl font-bold ${summary.evm_metrics.variance_at_completion >= 0 ? 'text-green-900' : 'text-red-900'}`}>
                       €{summary.evm_metrics.variance_at_completion.toLocaleString()}
                     </p>
                     <p className="text-sm text-gray-600">
-                      {summary.evm_metrics.variance_at_completion >= 0 ? 'Under Budget' : 'Over Budget'}
+                      {summary.evm_metrics.variance_at_completion >= 0 ? t('underBudget') : t('overBudget')}
                     </p>
                   </div>
                   <div className={`p-2 rounded-lg ${summary.evm_metrics.variance_at_completion >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
