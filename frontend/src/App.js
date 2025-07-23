@@ -136,17 +136,8 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
 
   const createDemoProject = async () => {
     try {
-      const demoProjectData = {
-        name: "Demo Construction Project",
-        description: "A sample construction project with pre-populated data for demonstration purposes",
-        total_budget: 250000,
-        start_date: new Date().toISOString().split('T')[0],
-        end_date: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 6 months from now
-        status: "active"
-      };
-
-      const response = await axios.post(`${API}/projects/demo`, demoProjectData);
-      alert('✅ Demo project created successfully with sample data!');
+      const response = await axios.post(`${API}/create-demo-project`);
+      alert(`✅ ${response.data.message}\nProject: ${response.data.project_name}\nBudget: €${response.data.total_budget.toLocaleString()}`);
       fetchProjects(); // Refresh the list
     } catch (error) {
       console.error('Error creating demo project:', error);
