@@ -339,8 +339,9 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "New Actions Menu System"
-    - "Enhanced PDF Export with Graphics"
+    - "Multi-Step Project Creation with Cost Estimates"
+    - "EVM Dashboard Integration"
+    - "Edit Cost Estimates Functionality"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
