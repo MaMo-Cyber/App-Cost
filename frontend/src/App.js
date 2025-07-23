@@ -1193,6 +1193,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     if (project) {
