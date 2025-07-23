@@ -1632,20 +1632,63 @@ const ProjectSetup = ({ onProjectCreated, onCancel }) => {
     'Contingency (10%)': 0
   });
 
+  // Calculate total estimated cost
+  const getTotalEstimate = () => {
+    return Object.values(costEstimates).reduce((sum, value) => sum + parseFloat(value || 0), 0);
+  };
+
+  // Handle cost estimate changes
+  const handleCostEstimateChange = (category, value) => {
+    setCostEstimates(prev => ({
+      ...prev,
+      [category]: parseFloat(value) || 0
+    }));
+  };
+
+  // Auto-calculate contingency when other values change
+  const calculateContingency = () => {
+    const totalWithoutContingency = Object.entries(costEstimates)
+      .filter(([key]) => key !== 'Contingency (10%)')
+      .reduce((sum, [, value]) => sum + parseFloat(value || 0), 0);
+    
+    setCostEstimates(prev => ({
+      ...prev,
+      'Contingency (10%)': totalWithoutContingency * 0.1
+    }));
+  };
+
+  const handleNext = () => {
+    if (step === 1) {
+      // Validate basic project info
+      if (!formData.name || !formData.total_budget || !formData.start_date || !formData.end_date) {
+        alert('Please fill in all required project information');
+        return;
+      }
+    }
+    setStep(step + 1);
+  };
+
+  const handleBack = () => {
+    setStep(step - 1);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     try {
-      const response = await axios.post(`${API}/projects`, {
+      // Create project with cost estimates
+      const projectData = {
         ...formData,
-        total_budget: parseFloat(formData.total_budget)
-      });
-      
-      // Initialize default categories
-      await axios.post(`${API}/initialize-default-categories`);
-      
+        total_budget: parseFloat(formData.total_budget),
+        cost_estimates: costEstimates,
+        estimated_total: getTotalEstimate()
+      };
+
+      const response = await axios.post(`${API}/projects`, projectData);
       onProjectCreated(response.data);
     } catch (error) {
       console.error('Error creating project:', error);
+      alert('Error creating project');
     }
   };
 
