@@ -134,6 +134,26 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
     }
   };
 
+  const createDemoProject = async () => {
+    try {
+      const demoProjectData = {
+        name: "Demo Construction Project",
+        description: "A sample construction project with pre-populated data for demonstration purposes",
+        total_budget: 250000,
+        start_date: new Date().toISOString().split('T')[0],
+        end_date: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 6 months from now
+        status: "active"
+      };
+
+      const response = await axios.post(`${API}/projects/demo`, demoProjectData);
+      alert('✅ Demo project created successfully with sample data!');
+      fetchProjects(); // Refresh the list
+    } catch (error) {
+      console.error('Error creating demo project:', error);
+      alert('❌ Error creating demo project. Please try again.');
+    }
+  };
+
   if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
   return (
