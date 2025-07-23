@@ -738,6 +738,10 @@ async def get_project_summary(project_id: str):
     else:
         status_indicator = "over_budget"
     
+    # Calculate EVM metrics
+    project_obj = Project(**project)
+    evm_metrics = calculate_evm_metrics(project_obj, total_spent)
+    
     return ProjectSummary(
         project=Project(**project),
         total_spent=total_spent,
@@ -751,7 +755,8 @@ async def get_project_summary(project_id: str):
         outstanding_breakdown=outstanding_breakdown,
         paid_breakdown=paid_breakdown,
         trend_data=trend_list,
-        status_indicator=status_indicator
+        status_indicator=status_indicator,
+        evm_metrics=evm_metrics.dict()
     )
 
 @api_router.get("/projects/{project_id}/dashboard-data")
