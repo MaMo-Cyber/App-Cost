@@ -1596,12 +1596,40 @@ const CategoryManagement = ({ onBack }) => {
 
 // Project Setup Component (unchanged)
 const ProjectSetup = ({ onProjectCreated, onCancel }) => {
+  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     total_budget: '',
     start_date: '',
     end_date: ''
+  });
+  
+  // Cost estimate categories
+  const [costEstimates, setCostEstimates] = useState({
+    'Equipment + Installation': 0,
+    'Installation + transport': 0,
+    'Equipment': 0,
+    'Steelwork': 0,
+    'Piping + installation': 0,
+    'Planning (INT)': 0,
+    'Planning (EXT)': 0,
+    'Project management': 0,
+    'Process engineering': 0,
+    'Automation engineering': 0,
+    'Civil engineering': 0,
+    'Qualification': 0,
+    'Instrumentation': 0,
+    'Installation (incl. cabling)': 0,
+    'Automation': 0,
+    'Hardware': 0,
+    'Software': 0,
+    'Civil': 0,
+    'Support': 0,
+    'Scaffolding': 0,
+    'Site facilities': 0,
+    'HVAC': 0,
+    'Contingency (10%)': 0
   });
 
   const handleSubmit = async (e) => {
