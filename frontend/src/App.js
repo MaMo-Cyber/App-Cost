@@ -1472,6 +1472,106 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
           </div>
         )}
 
+        {/* Planned vs Actual Comparison */}
+        {summary.project.cost_estimates && Object.keys(summary.project.cost_estimates).length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 Planned vs Actual Cost Comparison</h3>
+            
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="text-center">
+                  <p className="text-sm font-medium text-blue-700">Total Estimated</p>
+                  <p className="text-2xl font-bold text-blue-900">€{summary.project.estimated_total?.toLocaleString() || 0}</p>
+                </div>
+              </div>
+              
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="text-center">
+                  <p className="text-sm font-medium text-red-700">Total Actual</p>
+                  <p className="text-2xl font-bold text-red-900">€{summary.total_spent.toLocaleString()}</p>
+                </div>
+              </div>
+              
+              <div className={`border rounded-lg p-4 ${
+                (summary.project.estimated_total || 0) >= summary.total_spent 
+                ? 'bg-green-50 border-green-200' 
+                : 'bg-yellow-50 border-yellow-200'
+              }`}>
+                <div className="text-center">
+                  <p className={`text-sm font-medium ${
+                    (summary.project.estimated_total || 0) >= summary.total_spent 
+                    ? 'text-green-700' 
+                    : 'text-yellow-700'
+                  }`}>
+                    Variance
+                  </p>
+                  <p className={`text-2xl font-bold ${
+                    (summary.project.estimated_total || 0) >= summary.total_spent 
+                    ? 'text-green-900' 
+                    : 'text-yellow-900'
+                  }`}>
+                    €{((summary.project.estimated_total || 0) - summary.total_spent).toLocaleString()}
+                  </p>
+                  <p className={`text-xs ${
+                    (summary.project.estimated_total || 0) >= summary.total_spent 
+                    ? 'text-green-600' 
+                    : 'text-yellow-600'
+                  }`}>
+                    {(summary.project.estimated_total || 0) >= summary.total_spent ? 'Under Estimate' : 'Over Estimate'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Category-wise comparison */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">Category</th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-900">Estimated</th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-900">Actual</th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-900">Variance</th>
+                    <th className="text-center py-3 px-4 font-medium text-gray-900">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(summary.project.cost_estimates)
+                    .filter(([, estimate]) => estimate > 0)
+                    .map(([category, estimate]) => {
+                      const actual = summary.cost_breakdown[category] || 0;
+                      const variance = estimate - actual;
+                      const isUnder = variance >= 0;
+                      
+                      return (
+                        <tr key={category} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4 text-sm">{category}</td>
+                          <td className="py-3 px-4 text-sm text-right">€{estimate.toLocaleString()}</td>
+                          <td className="py-3 px-4 text-sm text-right">€{actual.toLocaleString()}</td>
+                          <td className={`py-3 px-4 text-sm text-right font-medium ${
+                            isUnder ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            €{Math.abs(variance).toLocaleString()}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              isUnder 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {isUnder ? '✓ Under' : '⚠ Over'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Phases Progress */}
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">🚀 Phases Progress</h3>
