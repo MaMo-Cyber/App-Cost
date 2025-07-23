@@ -1064,6 +1064,104 @@ async def create_demo_project():
     }
 
 @api_router.get("/projects/{project_id}/evm-timeline")
+async def get_evm_timeline(project_id: str):
+    """Get EVM timeline data for charting PV, EV, AC over time with cost overrun prediction"""
+    
+    # Get project
+    project = await db.projects.find_one({"id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Get cost entries sorted by date
+    cost_entries = await db.cost_entries.find({"project_id": project_id}).to_list(1000)
+    cost_entries = sorted(cost_entries, key=lambda x: x.get("entry_date", ""))
+    
+    project_start = datetime.fromisoformat(project["start_date"]).date()
+    project_end = datetime.fromisoformat(project["end_date"]).date()
+    project_duration_months = ((project_end - project_start).days / 30.44)  # Average days per month
+    total_budget = project["total_budget"]
+    
+    # Generate monthly timeline data
+    timeline_data = []
+    cumulative_actual = 0
+    current_date = project_start
+    
+    # Calculate monthly planned value (PV) - linear distribution
+    monthly_planned_budget = total_budget / project_duration_months
+    
+    for month in range(int(project_duration_months) + 1):
+        month_date = project_start.replace(day=1) + timedelta(days=30.44 * month)
+        if month_date > project_end:
+            month_date = project_end
+            
+        month_str = month_date.strftime("%Y-%m")
+        
+        # Calculate Planned Value (PV) - cumulative planned budget
+        planned_value = min(monthly_planned_budget * (month + 1), total_budget)
+        
+        # Calculate cumulative Actual Cost (AC) up to this month
+        month_actual = sum(
+            entry.get("total_amount", 0) 
+            for entry in cost_entries 
+            if entry.get("entry_date", "") <= month_date.isoformat()
+        )
+        
+        # Calculate Earned Value (EV) - simplified based on actual spending efficiency
+        # In reality, this should be based on physical progress, but we'll estimate
+        if month_actual > 0:
+            # Conservative estimate: EV = 85% of what we should have earned based on spending
+            spending_ratio = month_actual / total_budget if total_budget > 0 else 0
+            earned_value = min(spending_ratio * total_budget * 0.85, planned_value * 0.9)
+        else:
+            earned_value = 0
+        
+        # Calculate performance indices
+        cpi = earned_value / month_actual if month_actual > 0 else 1.0
+        spi = earned_value / planned_value if planned_value > 0 else 1.0
+        
+        # Calculate EAC (Estimate at Completion)
+        eac = total_budget / cpi if cpi > 0 else total_budget
+        
+        timeline_data.append({
+            "month": month_str,
+            "month_number": month + 1,
+            "date": month_date.isoformat(),
+            "planned_value": round(planned_value, 2),
+            "earned_value": round(earned_value, 2),
+            "actual_cost": round(month_actual, 2),
+            "cpi": round(cpi, 3),
+            "spi": round(spi, 3),
+            "eac": round(eac, 2),
+            "cost_variance": round(earned_value - month_actual, 2),
+            "schedule_variance": round(earned_value - planned_value, 2)
+        })
+    
+    # Find cost overrun point (where EAC exceeds BAC)
+    overrun_point = None
+    for point in timeline_data:
+        if point["eac"] > total_budget * 1.05:  # 5% threshold
+            overrun_point = {
+                "month": point["month"],
+                "month_number": point["month_number"],
+                "eac": point["eac"],
+                "budget_exceeded_by": point["eac"] - total_budget
+            }
+            break
+    
+    return {
+        "project_name": project["name"],
+        "total_budget": total_budget,
+        "timeline_data": timeline_data,
+        "overrun_point": overrun_point,
+        "current_performance": {
+            "current_cpi": timeline_data[-1]["cpi"] if timeline_data else 1.0,
+            "current_spi": timeline_data[-1]["spi"] if timeline_data else 1.0,
+            "final_eac": timeline_data[-1]["eac"] if timeline_data else total_budget,
+            "projected_overrun": timeline_data[-1]["eac"] - total_budget if timeline_data else 0
+        }
+    }
+
+@api_router.get("/projects/{project_id}/export-pdf")
 async def export_project_pdf(project_id: str):
     """Export project summary and charts as PDF with graphics"""
     try:
