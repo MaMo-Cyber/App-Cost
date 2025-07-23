@@ -1725,6 +1725,178 @@ const CategoryManagement = ({ onBack }) => {
   );
 };
 
+// Edit Cost Estimates Component
+const EditCostEstimates = ({ project, onBack }) => {
+  const [costEstimates, setCostEstimates] = useState({
+    'Equipment + Installation': 0,
+    'Installation + transport': 0,
+    'Equipment': 0,
+    'Steelwork': 0,
+    'Piping + installation': 0,
+    'Planning (INT)': 0,
+    'Planning (EXT)': 0,
+    'Project management': 0,
+    'Process engineering': 0,
+    'Automation engineering': 0,
+    'Civil engineering': 0,
+    'Qualification': 0,
+    'Instrumentation': 0,
+    'Installation (incl. cabling)': 0,
+    'Automation': 0,
+    'Hardware': 0,
+    'Software': 0,
+    'Civil': 0,
+    'Support': 0,
+    'Scaffolding': 0,
+    'Site facilities': 0,
+    'HVAC': 0,
+    'Contingency (10%)': 0
+  });
+  
+  const [loading, setLoading] = useState(false);
+  const API = process.env.REACT_APP_BACKEND_URL;
+
+  // Load existing estimates on component mount
+  useEffect(() => {
+    if (project.cost_estimates) {
+      setCostEstimates(prev => ({
+        ...prev,
+        ...project.cost_estimates
+      }));
+    }
+  }, [project]);
+
+  // Calculate total estimated cost
+  const getTotalEstimate = () => {
+    return Object.values(costEstimates).reduce((sum, value) => sum + parseFloat(value || 0), 0);
+  };
+
+  // Handle cost estimate changes
+  const handleCostEstimateChange = (category, value) => {
+    setCostEstimates(prev => ({
+      ...prev,
+      [category]: parseFloat(value) || 0
+    }));
+  };
+
+  // Auto-calculate contingency
+  const calculateContingency = () => {
+    const totalWithoutContingency = Object.entries(costEstimates)
+      .filter(([key]) => key !== 'Contingency (10%)')
+      .reduce((sum, [, value]) => sum + parseFloat(value || 0), 0);
+    
+    setCostEstimates(prev => ({
+      ...prev,
+      'Contingency (10%)': totalWithoutContingency * 0.1
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      await axios.put(`${API}/projects/${project.id}/cost-estimates`, costEstimates);
+      alert('Cost estimates updated successfully!');
+      onBack();
+    } catch (error) {
+      console.error('Error updating cost estimates:', error);
+      alert('Error updating cost estimates');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border">
+          <div className="px-6 py-4 border-b">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Edit Cost Estimates</h2>
+              <button
+                onClick={onBack}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+            <p className="text-gray-600 mt-2">Project: {project.name}</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Cost Categories</h3>
+              <button
+                type="button"
+                onClick={calculateContingency}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Calculate Contingency
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {Object.entries(costEstimates).map(([category, value]) => (
+                <div key={category}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {category}
+                    {category === 'Contingency (10%)' && (
+                      <span className="text-blue-600 text-xs ml-1">(Auto-calculated)</span>
+                    )}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={value || ''}
+                    onChange={(e) => handleCostEstimateChange(category, e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="0.00"
+                    disabled={category === 'Contingency (10%)'}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex justify-between items-center">
+                <span className="text-lg font-semibold text-blue-900">Total Estimated Cost:</span>
+                <span className="text-2xl font-bold text-blue-900">€{getTotalEstimate().toLocaleString()}</span>
+              </div>
+              {project.total_budget && (
+                <div className="flex justify-between items-center mt-2 text-sm">
+                  <span className="text-blue-700">Original Budget:</span>
+                  <span className="text-blue-700">€{project.total_budget.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={onBack}
+                className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                disabled={loading}
+              >
+                {loading ? 'Updating...' : 'Update Estimates'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Project Setup Component (unchanged)
 const ProjectSetup = ({ onProjectCreated, onCancel }) => {
   const [step, setStep] = useState(1);
