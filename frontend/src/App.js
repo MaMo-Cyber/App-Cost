@@ -1472,6 +1472,199 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
           </div>
         )}
 
+        {/* EVM Timeline Chart */}
+        {summary.evm_metrics && (
+          <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">📈 EVM Timeline Analysis</h3>
+            
+            <div className="h-96 mb-4">
+              <Line 
+                data={{
+                  labels: dashboardData.evm_timeline?.timeline_data?.map(point => point.month) || [],
+                  datasets: [
+                    {
+                      label: 'Planned Value (PV)',
+                      data: dashboardData.evm_timeline?.timeline_data?.map(point => point.planned_value) || [],
+                      borderColor: 'rgb(59, 130, 246)',
+                      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                      borderWidth: 2,
+                      fill: false,
+                      tension: 0.1
+                    },
+                    {
+                      label: 'Earned Value (EV)',
+                      data: dashboardData.evm_timeline?.timeline_data?.map(point => point.earned_value) || [],
+                      borderColor: 'rgb(16, 185, 129)',
+                      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                      borderWidth: 2,
+                      fill: false,
+                      tension: 0.1
+                    },
+                    {
+                      label: 'Actual Cost (AC)',
+                      data: dashboardData.evm_timeline?.timeline_data?.map(point => point.actual_cost) || [],
+                      borderColor: 'rgb(239, 68, 68)',
+                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                      borderWidth: 2,
+                      fill: false,
+                      tension: 0.1
+                    },
+                    {
+                      label: 'Estimate at Completion (EAC)',
+                      data: dashboardData.evm_timeline?.timeline_data?.map(point => point.eac) || [],
+                      borderColor: 'rgb(147, 51, 234)',
+                      backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                      borderWidth: 2,
+                      borderDash: [5, 5],
+                      fill: false,
+                      tension: 0.1
+                    }
+                  ]
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  interaction: {
+                    mode: 'index',
+                    intersect: false,
+                  },
+                  scales: {
+                    x: {
+                      display: true,
+                      title: {
+                        display: true,
+                        text: 'Timeline (Months)'
+                      }
+                    },
+                    y: {
+                      display: true,
+                      title: {
+                        display: true,
+                        text: 'Cost (€)'
+                      },
+                      ticks: {
+                        callback: function(value) {
+                          return '€' + value.toLocaleString();
+                        }
+                      }
+                    }
+                  },
+                  plugins: {
+                    title: {
+                      display: true,
+                      text: 'EVM Performance Over Time'
+                    },
+                    legend: {
+                      position: 'top',
+                    },
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          return context.dataset.label + ': €' + context.parsed.y.toLocaleString();
+                        }
+                      }
+                    },
+                    annotation: dashboardData.evm_timeline?.overrun_point ? {
+                      annotations: {
+                        overrunLine: {
+                          type: 'line',
+                          xMin: dashboardData.evm_timeline.overrun_point.month_number - 1,
+                          xMax: dashboardData.evm_timeline.overrun_point.month_number - 1,
+                          borderColor: 'rgb(239, 68, 68)',
+                          borderWidth: 3,
+                          borderDash: [10, 5],
+                          label: {
+                            content: `Cost Overrun Predicted (Month ${dashboardData.evm_timeline.overrun_point.month_number})`,
+                            enabled: true,
+                            position: 'top'
+                          }
+                        }
+                      }
+                    } : {}
+                  }
+                }}
+              />
+            </div>
+
+            {/* EVM Timeline Summary */}
+            {dashboardData.evm_timeline && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="text-center">
+                    <p className="text-xs font-medium text-blue-700">Current CPI</p>
+                    <p className={`text-lg font-bold ${
+                      dashboardData.evm_timeline.current_performance.current_cpi >= 1 
+                      ? 'text-green-700' : 'text-red-700'
+                    }`}>
+                      {dashboardData.evm_timeline.current_performance.current_cpi.toFixed(3)}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div className="text-center">
+                    <p className="text-xs font-medium text-green-700">Current SPI</p>
+                    <p className={`text-lg font-bold ${
+                      dashboardData.evm_timeline.current_performance.current_spi >= 1 
+                      ? 'text-green-700' : 'text-red-700'
+                    }`}>
+                      {dashboardData.evm_timeline.current_performance.current_spi.toFixed(3)}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                  <div className="text-center">
+                    <p className="text-xs font-medium text-purple-700">Final EAC</p>
+                    <p className="text-lg font-bold text-purple-700">
+                      €{dashboardData.evm_timeline.current_performance.final_eac.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className={`border rounded-lg p-3 ${
+                  dashboardData.evm_timeline.current_performance.projected_overrun > 0 
+                  ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
+                }`}>
+                  <div className="text-center">
+                    <p className={`text-xs font-medium ${
+                      dashboardData.evm_timeline.current_performance.projected_overrun > 0 
+                      ? 'text-red-700' : 'text-green-700'
+                    }`}>
+                      {dashboardData.evm_timeline.current_performance.projected_overrun > 0 ? 'Projected Overrun' : 'Under Budget'}
+                    </p>
+                    <p className={`text-lg font-bold ${
+                      dashboardData.evm_timeline.current_performance.projected_overrun > 0 
+                      ? 'text-red-700' : 'text-green-700'
+                    }`}>
+                      €{Math.abs(dashboardData.evm_timeline.current_performance.projected_overrun).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Overrun Warning */}
+            {dashboardData.evm_timeline?.overrun_point && (
+              <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 18.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                  </svg>
+                  <div>
+                    <p className="text-sm font-medium text-red-800">
+                      ⚠️ Cost Overrun Predicted in {dashboardData.evm_timeline.overrun_point.month}
+                    </p>
+                    <p className="text-xs text-red-600">
+                      Budget expected to be exceeded by €{dashboardData.evm_timeline.overrun_point.budget_exceeded_by.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Planned vs Actual Comparison */}
         {summary.project.cost_estimates && Object.keys(summary.project.cost_estimates).length > 0 && (
           <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
