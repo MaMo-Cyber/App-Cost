@@ -876,6 +876,27 @@ async def import_all_data(backup_data: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
 
+@api_router.put("/projects/{project_id}/cost-estimates")
+async def update_project_cost_estimates(project_id: str, cost_estimates: Dict[str, float]):
+    """Update the cost estimates for a project"""
+    estimated_total = sum(cost_estimates.values())
+    
+    result = await db.projects.update_one(
+        {"id": project_id},
+        {
+            "$set": {
+                "cost_estimates": cost_estimates,
+                "estimated_total": estimated_total,
+                "updated_at": datetime.utcnow().isoformat()
+            }
+        }
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    return {"message": "Cost estimates updated successfully", "estimated_total": estimated_total}
+
 @api_router.get("/projects/{project_id}/export-pdf")
 async def export_project_pdf(project_id: str):
     """Export project summary and charts as PDF with graphics"""
