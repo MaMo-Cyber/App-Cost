@@ -442,10 +442,22 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
+        {/* Header with Language Toggle and DateTime */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">{t('projects')}</h1>
+            <p className="text-gray-600 mt-1">Manage your project portfolio and track costs</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <CurrentDateTime />
+            <LanguageToggle />
+          </div>
+        </div>
+        
         <div className="bg-white rounded-lg shadow-sm border p-8">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Project Cost Tracker</h1>
+              <h2 className="text-2xl font-bold text-gray-900">{t('projects')}</h2>
               <p className="text-gray-600 mt-2">Select a project to manage or create a new one</p>
             </div>
             <div className="flex space-x-3">
@@ -473,13 +485,13 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                 </svg>
-                <span>Create Demo Project</span>
+                <span>{t('createDemoProject')}</span>
               </button>
               <button
                 onClick={onCreateNew}
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
-                + New Project
+                {t('newProject')}
               </button>
             </div>
           </div>
