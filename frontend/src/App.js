@@ -878,11 +878,18 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await axios.get(`${API}/projects/${project.id}/dashboard-data`);
-      setDashboardData(response.data);
-      setLoading(false);
+      const [dashboardResponse, timelineResponse] = await Promise.all([
+        axios.get(`${API}/projects/${project.id}/dashboard-data`),
+        axios.get(`${API}/projects/${project.id}/evm-timeline`)
+      ]);
+      
+      setDashboardData({
+        ...dashboardResponse.data,
+        evm_timeline: timelineResponse.data
+      });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+    } finally {
       setLoading(false);
     }
   };
