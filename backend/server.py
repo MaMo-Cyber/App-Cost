@@ -60,6 +60,9 @@ class Project(BaseModel):
     status: ProjectStatus = ProjectStatus.PLANNING
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    # Cost estimation fields
+    cost_estimates: Optional[Dict[str, float]] = {}
+    estimated_total: Optional[float] = 0.0
 
 class ProjectCreate(BaseModel):
     name: str
@@ -67,6 +70,8 @@ class ProjectCreate(BaseModel):
     total_budget: float
     start_date: date
     end_date: date
+    cost_estimates: Optional[Dict[str, float]] = {}
+    estimated_total: Optional[float] = 0.0
 
 class Phase(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
