@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, createContext, useContext } from "react";
 import "./App.css";
 import axios from "axios";
 import {
@@ -15,6 +15,297 @@ import {
   Filler
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
+
+// Language Context
+const LanguageContext = createContext();
+
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+};
+
+// Translations
+const translations = {
+  en: {
+    // Navigation & General
+    projects: "Projects",
+    dashboard: "Dashboard",
+    newProject: "New Project",
+    createDemoProject: "Create Demo Project",
+    actions: "Actions",
+    cancel: "Cancel",
+    save: "Save",
+    delete: "Delete",
+    edit: "Edit",
+    back: "Back",
+    next: "Next",
+    create: "Create",
+    update: "Update",
+    loading: "Loading...",
+    
+    // Project Management
+    projectName: "Project Name",
+    projectDescription: "Description",
+    totalBudget: "Total Budget",
+    startDate: "Start Date",
+    endDate: "End Date",
+    projectInfo: "Project Information",
+    costEstimates: "Cost Estimates",
+    review: "Review",
+    createProject: "Create Project",
+    editProject: "Edit Project",
+    
+    // EVM & Financial Terms
+    earnedValueManagement: "Earned Value Management (EVM)",
+    plannedValue: "Planned Value (PV)",
+    earnedValue: "Earned Value (EV)",
+    actualCost: "Actual Cost (AC)",
+    eacForecast: "EAC Forecast",
+    costPerformanceIndex: "Cost Performance Index (CPI)",
+    schedulePerformanceIndex: "Schedule Performance Index (SPI)",
+    varianceAtCompletion: "Variance at Completion",
+    budgetAnalysis: "Budget Analysis",
+    totalEstimated: "Total Estimated",
+    totalActual: "Total Actual",
+    variance: "Variance",
+    underBudget: "Under Budget",
+    overBudget: "Over Budget",
+    onBudget: "On Budget",
+    behind: "Behind",
+    ahead: "Ahead",
+    onSchedule: "On Schedule",
+    
+    // Status & Indicators
+    outstanding: "Outstanding",
+    paid: "Paid",
+    remaining: "Remaining",
+    available: "Available",
+    onTrack: "On Track",
+    warning: "Warning",
+    
+    // Cost Categories
+    equipmentInstallation: "Equipment + Installation",
+    installationTransport: "Installation + transport",
+    equipment: "Equipment",
+    steelwork: "Steelwork",
+    pipingInstallation: "Piping + installation",
+    planningInt: "Planning (INT)",
+    planningExt: "Planning (EXT)",
+    projectManagement: "Project management",
+    processEngineering: "Process engineering",
+    automationEngineering: "Automation engineering",
+    civilEngineering: "Civil engineering",
+    qualification: "Qualification",
+    instrumentation: "Instrumentation",
+    installationCabling: "Installation (incl. cabling)",
+    automation: "Automation",
+    hardware: "Hardware",
+    software: "Software",
+    civil: "Civil",
+    support: "Support",
+    scaffolding: "Scaffolding",
+    siteFacilities: "Site facilities",
+    hvac: "HVAC",
+    contingency: "Contingency (10%)",
+    
+    // Chart Labels
+    timeline: "Timeline (Months)",
+    costEur: "Cost (€)",
+    evmPerformanceOverTime: "EVM Performance Over Time",
+    budgetAllocated: "Budget Allocated",
+    amountSpent: "Amount Spent",
+    remainingActual: "Remaining (Actual)",
+    
+    // Time & Date
+    currentDateTime: "Current Date & Time",
+    lastUpdated: "Last Updated",
+    
+    // Messages
+    costOverrunPredicted: "Cost Overrun Predicted",
+    budgetExceededBy: "Budget expected to be exceeded by"
+  },
+  de: {
+    // Navigation & General
+    projects: "Projekte",
+    dashboard: "Dashboard",
+    newProject: "Neues Projekt",
+    createDemoProject: "Demo-Projekt erstellen",
+    actions: "Aktionen",
+    cancel: "Abbrechen",
+    save: "Speichern",
+    delete: "Löschen",
+    edit: "Bearbeiten",
+    back: "Zurück",
+    next: "Weiter",
+    create: "Erstellen",
+    update: "Aktualisieren",
+    loading: "Lädt...",
+    
+    // Project Management
+    projectName: "Projektname",
+    projectDescription: "Beschreibung",
+    totalBudget: "Gesamtbudget",
+    startDate: "Startdatum",
+    endDate: "Enddatum",
+    projectInfo: "Projektinformationen",
+    costEstimates: "Kostenschätzungen",
+    review: "Überprüfung",
+    createProject: "Projekt erstellen",
+    editProject: "Projekt bearbeiten",
+    
+    // EVM & Financial Terms
+    earnedValueManagement: "Earned Value Management (EVM)",
+    plannedValue: "Planwert (PV)",
+    earnedValue: "Fertigstellungswert (EV)",
+    actualCost: "Istkosten (AC)",
+    eacForecast: "EAC Prognose",
+    costPerformanceIndex: "Kostenleistungsindex (CPI)",
+    schedulePerformanceIndex: "Terminleistungsindex (SPI)",
+    varianceAtCompletion: "Abweichung bei Fertigstellung",
+    budgetAnalysis: "Budgetanalyse",
+    totalEstimated: "Geschätzte Gesamtkosten",
+    totalActual: "Tatsächliche Gesamtkosten",
+    variance: "Abweichung",
+    underBudget: "Unter Budget",
+    overBudget: "Über Budget",
+    onBudget: "Im Budget",
+    behind: "Verzögert",
+    ahead: "Vor Plan",
+    onSchedule: "Termingerecht",
+    
+    // Status & Indicators
+    outstanding: "Ausstehend",
+    paid: "Bezahlt",
+    remaining: "Verbleibend",
+    available: "Verfügbar",
+    onTrack: "Im Zeitplan",
+    warning: "Warnung",
+    
+    // Cost Categories
+    equipmentInstallation: "Ausrüstung + Installation",
+    installationTransport: "Installation + Transport",
+    equipment: "Ausrüstung",
+    steelwork: "Stahlbau",
+    pipingInstallation: "Rohrleitungen + Installation",
+    planningInt: "Planung (INT)",
+    planningExt: "Planung (EXT)",
+    projectManagement: "Projektmanagement",
+    processEngineering: "Verfahrenstechnik",
+    automationEngineering: "Automatisierungstechnik",
+    civilEngineering: "Bauingenieurwesen",
+    qualification: "Qualifizierung",
+    instrumentation: "Instrumentierung",
+    installationCabling: "Installation (inkl. Verkabelung)",
+    automation: "Automatisierung",
+    hardware: "Hardware",
+    software: "Software",
+    civil: "Bau",
+    support: "Support",
+    scaffolding: "Gerüstbau",
+    siteFacilities: "Betriebseinrichtungen",
+    hvac: "HLK",
+    contingency: "Contingency (10%)",
+    
+    // Chart Labels
+    timeline: "Zeitverlauf (Monate)",
+    costEur: "Kosten (€)",
+    evmPerformanceOverTime: "EVM-Leistung über Zeit",
+    budgetAllocated: "Budget zugeteilt",
+    amountSpent: "Ausgegeben",
+    remainingActual: "Verbleibend (Aktuell)",
+    
+    // Time & Date
+    currentDateTime: "Aktuelles Datum & Uhrzeit",
+    lastUpdated: "Zuletzt aktualisiert",
+    
+    // Messages
+    costOverrunPredicted: "Kostenüberschreitung vorhergesagt",
+    budgetExceededBy: "Budget wird voraussichtlich überschritten um"
+  }
+};
+
+// Language Provider Component
+export const LanguageProvider = ({ children }) => {
+  const [language, setLanguage] = useState('en');
+  
+  const t = (key) => {
+    return translations[language][key] || key;
+  };
+  
+  const toggleLanguage = () => {
+    setLanguage(prev => prev === 'en' ? 'de' : 'en');
+  };
+  
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t, toggleLanguage }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+
+// Real-time Clock Component
+const CurrentDateTime = () => {
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const { t, language } = useLanguage();
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, []);
+  
+  const formatDateTime = (date) => {
+    const options = {
+      year: 'numeric',
+      month: '2-digit', 
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    };
+    
+    return date.toLocaleString(language === 'de' ? 'de-DE' : 'en-US', options);
+  };
+  
+  return (
+    <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+      <div className="flex items-center space-x-2">
+        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <div>
+          <p className="text-xs text-gray-500">{t('currentDateTime')}</p>
+          <p className="text-sm font-medium text-gray-900">{formatDateTime(currentTime)}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Language Toggle Component
+const LanguageToggle = () => {
+  const { language, toggleLanguage } = useLanguage();
+  
+  return (
+    <button
+      onClick={toggleLanguage}
+      className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+    >
+      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h18M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path>
+      </svg>
+      <span className="text-sm font-medium text-gray-700">
+        {language === 'en' ? 'DE' : 'EN'}
+      </span>
+    </button>
+  );
+};
 
 ChartJS.register(
   CategoryScale,
