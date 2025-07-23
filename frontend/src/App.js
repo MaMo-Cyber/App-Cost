@@ -3516,9 +3516,11 @@ function App() {
   };
 
   return (
-    <div className="App">
-      {renderCurrentView()}
-    </div>
+    <LanguageProvider>
+      <div className="App">
+        {renderCurrentView()}
+      </div>
+    </LanguageProvider>
   );
 }
 
