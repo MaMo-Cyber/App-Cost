@@ -339,8 +339,8 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "Dashboard improved centering layout"
-    - "PDF export functionality"
+    - "New Actions Menu System"
+    - "Enhanced PDF Export with Graphics"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
