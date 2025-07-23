@@ -155,6 +155,32 @@ class ProjectSummary(BaseModel):
     paid_breakdown: Dict[str, float]
     trend_data: List[Dict[str, Any]]
     status_indicator: str
+    # EVM metrics
+    evm_metrics: Optional[Dict[str, Any]] = {}
+
+class EVMCalculation(BaseModel):
+    # Basic values
+    budget_at_completion: float  # BAC
+    actual_cost: float  # AC
+    earned_value: float  # EV
+    planned_value: float  # PV
+    
+    # Variances
+    cost_variance: float  # CV = EV - AC
+    schedule_variance: float  # SV = EV - PV
+    
+    # Performance Indices
+    cost_performance_index: float  # CPI = EV / AC
+    schedule_performance_index: float  # SPI = EV / PV
+    
+    # Forecasting
+    estimate_at_completion: float  # EAC = BAC / CPI
+    variance_at_completion: float  # VAC = BAC - EAC
+    estimate_to_complete: float  # ETC = EAC - AC
+    
+    # Status indicators
+    cost_status: str  # "Under Budget", "Over Budget", "On Budget"
+    schedule_status: str  # "Ahead", "Behind", "On Schedule"
 
 # Routes
 @api_router.get("/")
