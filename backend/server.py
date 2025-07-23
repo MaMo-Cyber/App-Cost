@@ -282,6 +282,12 @@ async def create_project(project: ProjectCreate):
         project_data['end_date'] = project_data['end_date'].isoformat()
     
     await db.projects.insert_one(project_data)
+    
+    # Initialize default categories if not exists
+    existing_categories = await db.cost_categories.count_documents({})
+    if existing_categories == 0:
+        await initialize_default_categories()
+    
     return project_obj
 
 @api_router.get("/projects", response_model=List[Project])
