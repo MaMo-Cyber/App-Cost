@@ -182,6 +182,87 @@ class EVMCalculation(BaseModel):
     cost_status: str  # "Under Budget", "Over Budget", "On Budget"
     schedule_status: str  # "Ahead", "Behind", "On Schedule"
 
+# EVM Calculation Functions
+def calculate_evm_metrics(project: Project, total_spent: float, project_progress: float = None) -> EVMCalculation:
+    """
+    Calculate Earned Value Management metrics
+    
+    Args:
+        project: Project object with budget and estimates
+        total_spent: Actual cost to date (AC)
+        project_progress: Percentage of project completion (0-1), if None, estimated from schedule
+    """
+    budget_at_completion = project.total_budget  # BAC
+    actual_cost = total_spent  # AC
+    
+    # Calculate project progress if not provided
+    if project_progress is None:
+        today = date.today()
+        project_duration = (project.end_date - project.start_date).days
+        elapsed_days = (today - project.start_date).days
+        project_progress = min(max(elapsed_days / project_duration, 0), 1) if project_duration > 0 else 0
+    
+    # Calculate Planned Value (PV) - based on schedule
+    planned_value = budget_at_completion * project_progress
+    
+    # Calculate Earned Value (EV) - this is simplified, in reality should be based on actual work completed
+    # For now, we'll estimate it based on cost performance relative to estimates
+    if hasattr(project, 'cost_estimates') and project.cost_estimates:
+        estimated_total = sum(project.cost_estimates.values()) if project.cost_estimates else budget_at_completion
+        if estimated_total > 0:
+            earned_value = (actual_cost / estimated_total) * budget_at_completion * 0.9  # Conservative estimate
+        else:
+            earned_value = planned_value * 0.8  # Default conservative estimate
+    else:
+        earned_value = planned_value * 0.8  # Default conservative estimate
+    
+    # Ensure EV doesn't exceed BAC
+    earned_value = min(earned_value, budget_at_completion)
+    
+    # Calculate variances
+    cost_variance = earned_value - actual_cost  # CV
+    schedule_variance = earned_value - planned_value  # SV
+    
+    # Calculate performance indices
+    cost_performance_index = earned_value / actual_cost if actual_cost > 0 else 1.0  # CPI
+    schedule_performance_index = earned_value / planned_value if planned_value > 0 else 1.0  # SPI
+    
+    # Calculate forecasting metrics
+    estimate_at_completion = budget_at_completion / cost_performance_index if cost_performance_index > 0 else budget_at_completion  # EAC
+    variance_at_completion = budget_at_completion - estimate_at_completion  # VAC
+    estimate_to_complete = estimate_at_completion - actual_cost  # ETC
+    
+    # Determine status indicators
+    if cost_performance_index > 1.05:
+        cost_status = "Under Budget"
+    elif cost_performance_index < 0.95:
+        cost_status = "Over Budget"
+    else:
+        cost_status = "On Budget"
+        
+    if schedule_performance_index > 1.05:
+        schedule_status = "Ahead"
+    elif schedule_performance_index < 0.95:
+        schedule_status = "Behind"
+    else:
+        schedule_status = "On Schedule"
+    
+    return EVMCalculation(
+        budget_at_completion=budget_at_completion,
+        actual_cost=actual_cost,
+        earned_value=earned_value,
+        planned_value=planned_value,
+        cost_variance=cost_variance,
+        schedule_variance=schedule_variance,
+        cost_performance_index=cost_performance_index,
+        schedule_performance_index=schedule_performance_index,
+        estimate_at_completion=estimate_at_completion,
+        variance_at_completion=variance_at_completion,
+        estimate_to_complete=estimate_to_complete,
+        cost_status=cost_status,
+        schedule_status=schedule_status
+    )
+
 # Routes
 @api_router.get("/")
 async def root():
