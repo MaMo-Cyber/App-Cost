@@ -897,7 +897,173 @@ async def update_project_cost_estimates(project_id: str, cost_estimates: Dict[st
     
     return {"message": "Cost estimates updated successfully", "estimated_total": estimated_total}
 
-@api_router.get("/projects/{project_id}/export-pdf")
+@api_router.post("/create-demo-project")
+async def create_demo_project():
+    """Create a comprehensive demo project with realistic EVM data"""
+    
+    # Demo project data
+    project_data = {
+        "id": str(uuid.uuid4()),
+        "name": "Industrial Automation System Implementation",
+        "description": "Complete automation system for manufacturing facility including PLC integration, SCADA system, and process optimization",
+        "total_budget": 850000.0,  # €850K
+        "start_date": "2024-01-01",
+        "end_date": "2024-12-31",
+        "status": "active",
+        "created_at": datetime.utcnow().isoformat(),
+        "updated_at": datetime.utcnow().isoformat(),
+        
+        # Detailed cost estimates (BAC breakdown)
+        "cost_estimates": {
+            "Equipment + Installation": 120000.0,
+            "Installation + transport": 45000.0,
+            "Equipment": 95000.0,
+            "Steelwork": 75000.0,
+            "Piping + installation": 65000.0,
+            "Planning (INT)": 55000.0,
+            "Planning (EXT)": 35000.0,
+            "Project management": 48000.0,
+            "Process engineering": 67000.0,
+            "Automation engineering": 85000.0,
+            "Civil engineering": 42000.0,
+            "Qualification": 28000.0,
+            "Instrumentation": 58000.0,
+            "Installation (incl. cabling)": 52000.0,
+            "Automation": 78000.0,
+            "Hardware": 89000.0,
+            "Software": 43000.0,
+            "Civil": 33000.0,
+            "Support": 25000.0,
+            "Scaffolding": 18000.0,
+            "Site facilities": 22000.0,
+            "HVAC": 37000.0,
+            "Contingency (10%)": 77273.0  # 10% of total above
+        },
+        "estimated_total": 850000.0
+    }
+    
+    # Insert demo project
+    await db.projects.insert_one(project_data)
+    
+    # Create demo phases
+    phases_data = [
+        {
+            "id": str(uuid.uuid4()),
+            "project_id": project_data["id"],
+            "name": "Planning & Design",
+            "description": "Initial planning, design, and specification phase",
+            "start_date": "2024-01-01",
+            "end_date": "2024-03-31",
+            "status": "completed",
+            "budget_allocation": 150000.0
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "project_id": project_data["id"],
+            "name": "Procurement & Manufacturing",
+            "description": "Equipment procurement and custom manufacturing",
+            "start_date": "2024-02-01",
+            "end_date": "2024-06-30",
+            "status": "active",
+            "budget_allocation": 300000.0
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "project_id": project_data["id"],
+            "name": "Installation & Integration",
+            "description": "On-site installation and system integration",
+            "start_date": "2024-05-01",
+            "end_date": "2024-09-30",
+            "status": "planning",
+            "budget_allocation": 250000.0
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "project_id": project_data["id"],
+            "name": "Testing & Commissioning",
+            "description": "System testing, commissioning, and handover",
+            "start_date": "2024-09-01",
+            "end_date": "2024-12-31",
+            "status": "planning",
+            "budget_allocation": 150000.0
+        }
+    ]
+    
+    for phase in phases_data:
+        await db.phases.insert_one(phase)
+    
+    # Create realistic cost entries showing progressive spending with overruns
+    cost_entries_data = [
+        # Month 1-2: Planning phase (slightly over)
+        {"category": "Planning (INT)", "amount": 18000, "date": "2024-01-15", "status": "paid"},
+        {"category": "Planning (EXT)", "amount": 12000, "date": "2024-01-20", "status": "paid"},
+        {"category": "Project management", "amount": 8000, "date": "2024-01-25", "status": "paid"},
+        {"category": "Process engineering", "amount": 15000, "date": "2024-02-10", "status": "paid"},
+        {"category": "Planning (INT)", "amount": 22000, "date": "2024-02-15", "status": "paid"},  # Over estimate
+        {"category": "Civil engineering", "amount": 14000, "date": "2024-02-20", "status": "paid"},
+        
+        # Month 3-4: Design completion and procurement start (over budget)
+        {"category": "Planning (EXT)", "amount": 28000, "date": "2024-03-05", "status": "paid"},  # Over estimate
+        {"category": "Automation engineering", "amount": 25000, "date": "2024-03-10", "status": "paid"},
+        {"category": "Software", "amount": 35000, "date": "2024-03-15", "status": "paid"},
+        {"category": "Project management", "amount": 12000, "date": "2024-03-25", "status": "paid"},
+        {"category": "Equipment", "amount": 45000, "date": "2024-04-01", "status": "paid"},
+        {"category": "Hardware", "amount": 52000, "date": "2024-04-10", "status": "paid"},
+        
+        # Month 5-6: Major equipment procurement (significant overruns)
+        {"category": "Equipment", "amount": 65000, "date": "2024-05-01", "status": "paid"},  # Over estimate
+        {"category": "Equipment + Installation", "amount": 85000, "date": "2024-05-15", "status": "outstanding"},  # Over estimate
+        {"category": "Instrumentation", "amount": 45000, "date": "2024-05-20", "status": "paid"},
+        {"category": "Hardware", "amount": 55000, "date": "2024-06-01", "status": "outstanding"},  # Over estimate
+        {"category": "Automation", "amount": 42000, "date": "2024-06-10", "status": "paid"},
+        {"category": "Installation + transport", "amount": 35000, "date": "2024-06-15", "status": "outstanding"},
+        
+        # Month 7-8: Installation phase (continuing overruns)
+        {"category": "Steelwork", "amount": 48000, "date": "2024-07-01", "status": "paid"},
+        {"category": "Piping + installation", "amount": 72000, "date": "2024-07-15", "status": "outstanding"},  # Over estimate
+        {"category": "Installation (incl. cabling)", "amount": 58000, "date": "2024-07-25", "status": "outstanding"},  # Over estimate
+        {"category": "Civil engineering", "amount": 35000, "date": "2024-08-05", "status": "outstanding"},  # Over estimate
+        {"category": "HVAC", "amount": 42000, "date": "2024-08-15", "status": "outstanding"},  # Over estimate
+        {"category": "Support", "amount": 18000, "date": "2024-08-20", "status": "paid"},
+    ]
+    
+    # Insert cost entries
+    for i, entry in enumerate(cost_entries_data):
+        entry_data = {
+            "id": str(uuid.uuid4()),
+            "project_id": project_data["id"],
+            "category_id": str(uuid.uuid4()),
+            "category_name": entry["category"],
+            "description": f"Demo cost entry for {entry['category']}",
+            "total_amount": entry["amount"],
+            "entry_date": entry["date"],
+            "status": entry["status"],
+            "due_date": datetime.fromisoformat(entry["date"]).date() + timedelta(days=30) if entry["status"] == "outstanding" else None,
+            "created_at": datetime.utcnow().isoformat(),
+            "hours": None,
+            "hourly_rate": None,
+            "quantity": None,
+            "unit_price": None,
+            "phase_id": phases_data[min(i // 8, 3)]["id"]  # Distribute across phases
+        }
+        
+        # Convert due_date to string if it exists
+        if entry_data["due_date"]:
+            entry_data["due_date"] = entry_data["due_date"].isoformat()
+            
+        await db.cost_entries.insert_one(entry_data)
+    
+    return {
+        "message": "Demo project created successfully!",
+        "project_id": project_data["id"],
+        "project_name": project_data["name"],
+        "total_budget": project_data["total_budget"],
+        "estimated_total": project_data["estimated_total"],
+        "cost_entries_created": len(cost_entries_data),
+        "phases_created": len(phases_data)
+    }
+
+@api_router.get("/projects/{project_id}/evm-timeline")
 async def export_project_pdf(project_id: str):
     """Export project summary and charts as PDF with graphics"""
     try:
