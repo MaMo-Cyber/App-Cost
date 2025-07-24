@@ -1190,7 +1190,7 @@ const CostStatusManager = ({ project, onBack }) => {
                             onClick={() => updateCostStatus(cost.id, 'paid')}
                             className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
                           >
-                            Mark as Paid ✓
+                            {t('markAsPaid')} ✓
                           </button>
                         </div>
                       </div>
