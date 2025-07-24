@@ -2116,6 +2116,26 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
               </div>
             )}
 
+            {/* Cost Trend Analysis */}
+            {dashboardData.evm_timeline?.cost_trend_deterioration && (
+              <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 18.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                  </svg>
+                  <div>
+                    <p className="text-sm font-medium text-yellow-800">
+                      📉 Cost Performance Deteriorating
+                    </p>
+                    <p className="text-xs text-yellow-600">
+                      CPI has decreased by {Math.abs(dashboardData.evm_timeline.cost_trend_deterioration.cpi_change)} in recent months (
+                      {dashboardData.evm_timeline.cost_trend_deterioration.severity} severity)
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Overrun Warning */}
             {dashboardData.evm_timeline?.overrun_point && (
               <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
@@ -2125,10 +2145,11 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                   </svg>
                   <div>
                     <p className="text-sm font-medium text-red-800">
-                      ⚠️ Cost Overrun Predicted in {dashboardData.evm_timeline.overrun_point.month}
+                      ⚠️ {t('costOverrunPredicted')} in {dashboardData.evm_timeline.overrun_point.month}
+                      {dashboardData.evm_timeline.overrun_point.is_prediction && ' (Based on Current Trend)'}
                     </p>
                     <p className="text-xs text-red-600">
-                      Budget expected to be exceeded by €{dashboardData.evm_timeline.overrun_point.budget_exceeded_by.toLocaleString()}
+                      {t('budgetExceededBy')} €{dashboardData.evm_timeline.overrun_point.budget_exceeded_by.toLocaleString()}
                     </p>
                   </div>
                 </div>
