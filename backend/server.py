@@ -766,6 +766,8 @@ async def get_project_obligations_summary(project_id: str):
         "total_count": len(obligations),
         "by_category": by_category
     }
+
+# Cost entry routes
 @api_router.post("/cost-entries", response_model=CostEntry)
 async def create_cost_entry(entry: CostEntryCreate):
     try:
