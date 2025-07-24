@@ -158,7 +158,7 @@ class ProjectSummary(BaseModel):
     # EVM metrics
     evm_metrics: Optional[Dict[str, Any]] = {}
 
-# Obligation/Commitment Model
+# Enhanced Obligation/Commitment Model with Confidence and Status
 class Obligation(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     project_id: str
@@ -168,8 +168,14 @@ class Obligation(BaseModel):
     amount: float
     commitment_date: date = Field(default_factory=date.today)
     expected_incur_date: Optional[date] = None  # When we expect this to become actual cost
-    status: str = "committed"  # committed, cancelled, converted_to_actual
+    status: str = "active"  # active, cancelled, converted_to_actual
+    confidence_level: str = "medium"  # high, medium, low
+    confidence_percentage: float = Field(default=80.0)  # For weighted calculations
+    priority: str = "normal"  # high, normal, low
+    contract_reference: Optional[str] = None  # PO number, contract ID
+    vendor_supplier: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class ObligationCreate(BaseModel):
     project_id: str
@@ -177,6 +183,20 @@ class ObligationCreate(BaseModel):
     description: str
     amount: float
     expected_incur_date: Optional[date] = None
+    confidence_level: str = Field(default="medium")  # high, medium, low
+    priority: str = Field(default="normal")
+    contract_reference: Optional[str] = None
+    vendor_supplier: Optional[str] = None
+
+class ObligationUpdate(BaseModel):
+    description: Optional[str] = None
+    amount: Optional[float] = None
+    expected_incur_date: Optional[date] = None
+    status: Optional[str] = None
+    confidence_level: Optional[str] = None
+    priority: Optional[str] = None
+    contract_reference: Optional[str] = None
+    vendor_supplier: Optional[str] = None
 
 class EVMCalculation(BaseModel):
     # Basic values
