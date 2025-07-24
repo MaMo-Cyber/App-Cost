@@ -456,6 +456,17 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
     }
   };
 
+  const createOngoingDemoProject = async () => {
+    try {
+      const response = await axios.post(`${API}/create-ongoing-demo-project`);
+      alert(`✅ ${response.data.message}\nProject: ${response.data.project_name}\nBudget: €${response.data.total_budget.toLocaleString()}\nStatus: ${response.data.project_status}`);
+      fetchProjects(); // Refresh the list
+    } catch (error) {
+      console.error('Error creating ongoing demo project:', error);
+      alert('❌ Error creating ongoing demo project. Please try again.');
+    }
+  };
+
   const createDemoProject = async () => {
     try {
       const response = await axios.post(`${API}/create-demo-project`);
