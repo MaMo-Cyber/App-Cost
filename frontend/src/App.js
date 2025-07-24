@@ -148,6 +148,10 @@ const translations = {
     costBreakdown: "Cost Breakdown",
     recentEntries: "Recent Entries",
     projectSummary: "Project Summary",
+    totalBudget: "Total Budget",
+    totalSpent: "Total Spent",
+    paidOnly: "Paid Only",
+    availableIfPaid: "Available (If Paid)",
     
     // Cost Categories
     equipmentInstallation: "Equipment + Installation",
