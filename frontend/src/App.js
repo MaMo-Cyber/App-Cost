@@ -1116,7 +1116,7 @@ const CostStatusManager = ({ project, onBack }) => {
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-red-50 p-6 rounded-lg border border-red-200">
-              <h3 className="text-lg font-semibold text-red-800 mb-2">Outstanding Costs</h3>
+              <h3 className="text-lg font-semibold text-red-800 mb-2">{t('outstandingCosts')}</h3>
               <p className="text-3xl font-bold text-red-600">€{outstandingTotal.toLocaleString()}</p>
               <p className="text-sm text-red-600">{outstandingCosts.length} entries</p>
             </div>
