@@ -1644,7 +1644,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                       </button>
                       
                       <div className="border-t my-1"></div>
-                      <div className="px-4 py-2 text-sm font-medium text-gray-500">Management</div>
+                      <div className="px-4 py-2 text-sm font-medium text-gray-500">{t('management')}</div>
                       
                       <button
                         onClick={() => {
