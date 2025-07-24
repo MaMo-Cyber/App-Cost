@@ -1808,7 +1808,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
           </div>
         )}
 
-        {/* EVM Timeline Chart */}
+        {/* EVM Timeline Chart with Cost Baseline and Trend Line */}
         {summary.evm_metrics && (
           <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
             <div className="flex justify-between items-center mb-4">
@@ -1818,19 +1818,59 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
               </div>
             </div>
             
+            {/* Project Status and Predictions */}
+            {dashboardData.evm_timeline?.completion_prediction && (
+              <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                  <div className="text-center">
+                    <p className="text-blue-700 font-medium">Current Progress</p>
+                    <p className="text-xl font-bold text-blue-900">
+                      {dashboardData.evm_timeline.completion_prediction.current_progress_pct}%
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-blue-700 font-medium">Projected Total Cost</p>
+                    <p className="text-xl font-bold text-blue-900">
+                      €{dashboardData.evm_timeline.completion_prediction.projected_completion_cost.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-blue-700 font-medium">Cost Efficiency</p>
+                    <p className={`text-xl font-bold ${
+                      dashboardData.evm_timeline.completion_prediction.cost_efficiency === 'good' ? 'text-green-600' :
+                      dashboardData.evm_timeline.completion_prediction.cost_efficiency === 'poor' ? 'text-red-600' : 'text-yellow-600'
+                    }`}>
+                      {dashboardData.evm_timeline.completion_prediction.cost_efficiency.toUpperCase()}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-blue-700 font-medium">Projected Overrun</p>
+                    <p className={`text-xl font-bold ${
+                      dashboardData.evm_timeline.completion_prediction.projected_overrun_pct > 0 ? 'text-red-600' : 'text-green-600'
+                    }`}>
+                      {dashboardData.evm_timeline.completion_prediction.projected_overrun_pct > 0 ? '+' : ''}
+                      {dashboardData.evm_timeline.completion_prediction.projected_overrun_pct}%
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="h-96 mb-4">
               <Line 
                 data={{
                   labels: dashboardData.evm_timeline?.timeline_data?.map(point => point.month) || [],
                   datasets: [
                     {
-                      label: t('plannedValue'),
+                      label: `${t('plannedValue')} (Cost Baseline)`,
                       data: dashboardData.evm_timeline?.timeline_data?.map(point => point.planned_value) || [],
                       borderColor: 'rgb(59, 130, 246)',
                       backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                      borderWidth: 2,
+                      borderWidth: 3,
                       fill: false,
-                      tension: 0.1
+                      tension: 0.2,
+                      pointStyle: 'circle',
+                      pointRadius: 4
                     },
                     {
                       label: t('earnedValue'),
@@ -1839,7 +1879,9 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                       backgroundColor: 'rgba(16, 185, 129, 0.1)',
                       borderWidth: 2,
                       fill: false,
-                      tension: 0.1
+                      tension: 0.1,
+                      pointStyle: 'triangle',
+                      pointRadius: 3
                     },
                     {
                       label: t('actualCost'),
@@ -1848,17 +1890,32 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                       backgroundColor: 'rgba(239, 68, 68, 0.1)',
                       borderWidth: 2,
                       fill: false,
-                      tension: 0.1
+                      tension: 0.1,
+                      pointStyle: 'rect',
+                      pointRadius: 3
                     },
                     {
-                      label: t('eacForecast'),
+                      label: `${t('eacForecast')} (Cost Trend Line)`,
                       data: dashboardData.evm_timeline?.timeline_data?.map(point => point.eac) || [],
                       borderColor: 'rgb(147, 51, 234)',
                       backgroundColor: 'rgba(147, 51, 234, 0.1)',
-                      borderWidth: 2,
-                      borderDash: [5, 5],
+                      borderWidth: 3,
+                      borderDash: [10, 5],
                       fill: false,
-                      tension: 0.1
+                      tension: 0.2,
+                      pointStyle: 'rectRot',
+                      pointRadius: 4
+                    },
+                    {
+                      label: 'Budget at Completion (BAC)',
+                      data: dashboardData.evm_timeline?.timeline_data?.map(() => project.total_budget) || [],
+                      borderColor: 'rgb(107, 114, 128)',
+                      backgroundColor: 'rgba(107, 114, 128, 0.1)',
+                      borderWidth: 2,
+                      borderDash: [2, 2],
+                      fill: false,
+                      pointRadius: 0,
+                      pointHoverRadius: 0
                     }
                   ]
                 }}
@@ -1874,14 +1931,28 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                       display: true,
                       title: {
                         display: true,
-                        text: t('timeline')
+                        text: t('timeline'),
+                        font: {
+                          size: 14,
+                          weight: 'bold'
+                        }
+                      },
+                      grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
                       }
                     },
                     y: {
                       display: true,
                       title: {
                         display: true,
-                        text: t('costEur')
+                        text: t('costEur'),
+                        font: {
+                          size: 14,
+                          weight: 'bold'
+                        }
+                      },
+                      grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
                       },
                       ticks: {
                         callback: function(value) {
@@ -1893,15 +1964,43 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                   plugins: {
                     title: {
                       display: true,
-                      text: t('evmPerformanceOverTime')
+                      text: `${t('evmPerformanceOverTime')} - ${t('costOverrunPredicted')}`,
+                      font: {
+                        size: 16,
+                        weight: 'bold'
+                      }
                     },
                     legend: {
                       position: 'top',
+                      labels: {
+                        usePointStyle: true,
+                        font: {
+                          size: 12
+                        }
+                      }
                     },
                     tooltip: {
                       callbacks: {
+                        title: function(context) {
+                          const dataPoint = dashboardData.evm_timeline?.timeline_data?.[context[0].dataIndex];
+                          const futureLabel = dataPoint?.is_future ? ' (Prediction)' : '';
+                          return context[0].label + futureLabel;
+                        },
                         label: function(context) {
                           return context.dataset.label + ': €' + context.parsed.y.toLocaleString(language === 'de' ? 'de-DE' : 'en-US');
+                        },
+                        afterBody: function(context) {
+                          const dataIndex = context[0].dataIndex;
+                          const dataPoint = dashboardData.evm_timeline?.timeline_data?.[dataIndex];
+                          if (dataPoint) {
+                            return [
+                              `CPI: ${dataPoint.cpi}`,
+                              `SPI: ${dataPoint.spi}`,
+                              `Cost Variance: €${dataPoint.cost_variance.toLocaleString()}`,
+                              `Schedule Variance: €${dataPoint.schedule_variance.toLocaleString()}`
+                            ];
+                          }
+                          return [];
                         }
                       }
                     },
@@ -1912,12 +2011,14 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                           xMin: dashboardData.evm_timeline.overrun_point.month_number - 1,
                           xMax: dashboardData.evm_timeline.overrun_point.month_number - 1,
                           borderColor: 'rgb(239, 68, 68)',
-                          borderWidth: 3,
+                          borderWidth: 4,
                           borderDash: [10, 5],
                           label: {
-                            content: `${t('costOverrunPredicted')} (${language === 'de' ? 'Monat' : 'Month'} ${dashboardData.evm_timeline.overrun_point.month_number})`,
+                            content: `⚠️ ${t('costOverrunPredicted')} (${language === 'de' ? 'Monat' : 'Month'} ${dashboardData.evm_timeline.overrun_point.month_number})`,
                             enabled: true,
-                            position: 'top'
+                            position: 'start',
+                            backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                            color: 'white'
                           }
                         }
                       }
