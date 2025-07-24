@@ -970,7 +970,7 @@ async def create_ongoing_demo_project():
             "description": "Network infrastructure, hardware installation, and base systems",
             "start_date": (project_start + timedelta(days=45)).isoformat(),
             "end_date": (project_start + timedelta(days=150)).isoformat(),
-            "status": "active",
+            "status": "in_progress",
             "budget_allocation": 400000.0,
             "completion_percentage": 75
         },
@@ -981,7 +981,7 @@ async def create_ongoing_demo_project():
             "description": "AI analytics, control software, and system integration",
             "start_date": (project_start + timedelta(days=120)).isoformat(),
             "end_date": (today + timedelta(days=90)).isoformat(),
-            "status": "active",
+            "status": "in_progress",
             "budget_allocation": 350000.0,
             "completion_percentage": 25
         },
