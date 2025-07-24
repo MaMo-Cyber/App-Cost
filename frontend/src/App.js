@@ -990,7 +990,7 @@ const PaymentTimeline = ({ project, onBack }) => {
             {/* Due Later & No Due Date - Combined for brevity */}
             {(timeline_data.due_later.length > 0 || timeline_data.no_due_date.length > 0) && (
               <div className="border-l-4 border-blue-500 pl-6">
-                <h3 className="text-xl font-bold text-blue-700 mb-4">🔮 FUTURE & UNSCHEDULED</h3>
+                <h3 className="text-xl font-bold text-blue-700 mb-4">🔮 {t('futureUnscheduled')}</h3>
                 <div className="space-y-3">
                   {[...timeline_data.due_later, ...timeline_data.no_due_date].map((entry) => (
                     <div key={entry.id} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
