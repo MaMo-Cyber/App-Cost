@@ -488,11 +488,7 @@ metadata:
   run_ui: true
 
 test_plan:
-  current_focus: 
-    - "Enhanced EVM Analysis with Comprehensive Explanations"
-    - "Create Ongoing Demo Project Functionality"
-    - "Future Phase Analysis for Unfinished Projects"
-    - "Create Ongoing Demo Project Button (Frontend)"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
