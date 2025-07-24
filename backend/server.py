@@ -500,7 +500,7 @@ async def get_enhanced_evm_timeline(project_id: str):
         evm = calculate_enhanced_evm_metrics(
             project=project_obj,
             total_spent=cumulative_actual,
-            total_obligations=cumulative_obligations,
+            obligations_data=obligations,
             project_progress=progress,
             include_obligations=True
         )
