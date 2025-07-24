@@ -1048,6 +1048,7 @@ const CostStatusManager = ({ project, onBack }) => {
   const [paidCosts, setPaidCosts] = useState([]);
   const [activeTab, setActiveTab] = useState('outstanding');
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     fetchCostsByStatus();
