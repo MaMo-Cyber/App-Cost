@@ -138,6 +138,11 @@ const translations = {
     totalBudget: "Total Budget",
     budgetUtilization: "Budget Utilization",
     entries: "entries",
+    outstandingCosts: "Outstanding Costs",
+    paidCosts: "Paid Costs",
+    totalCosts: "Total Costs",
+    noOutstandingCosts: "No outstanding costs! 🎉",
+    noPaidCosts: "No paid costs yet.",
     
     // Summary Labels
     costBreakdown: "Cost Breakdown",
