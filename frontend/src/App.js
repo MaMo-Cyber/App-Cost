@@ -947,7 +947,7 @@ const PaymentTimeline = ({ project, onBack }) => {
             {/* Due This Month */}
             {timeline_data.due_this_month.length > 0 && (
               <div className="border-l-4 border-yellow-500 pl-6">
-                <h3 className="text-xl font-bold text-yellow-700 mb-4">📅 DUE THIS MONTH</h3>
+                <h3 className="text-xl font-bold text-yellow-700 mb-4">📅 {t('dueThisMonth')}</h3>
                 <div className="space-y-3">
                   {timeline_data.due_this_month.map((entry) => (
                     <div key={entry.id} className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
