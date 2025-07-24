@@ -4208,7 +4208,7 @@ function App() {
           />
         );
       case 'obligations':
-        return <ObligationManager project={selectedProject} onBack={() => setCurrentView('dashboard')} />;
+        return <ObligationManager project={currentProject} onBack={() => setCurrentView('dashboard')} />;
       case 'costs':
         return (
           <CostEntry 
