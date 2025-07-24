@@ -1161,7 +1161,7 @@ async def create_demo_project():
             "description": "On-site installation and system integration",
             "start_date": "2024-05-01",
             "end_date": "2024-09-30",
-            "status": "planning",
+            "status": "not_started",
             "budget_allocation": 250000.0
         },
         {
@@ -1171,7 +1171,7 @@ async def create_demo_project():
             "description": "System testing, commissioning, and handover",
             "start_date": "2024-09-01",
             "end_date": "2024-12-31",
-            "status": "planning",
+            "status": "not_started",
             "budget_allocation": 150000.0
         }
     ]
