@@ -2863,7 +2863,7 @@ const EditCostEstimates = ({ project, onBack }) => {
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="px-6 py-4 border-b">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">Edit Cost Estimates</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('editCostEstimatesHeader')}</h2>
               <button
                 onClick={onBack}
                 className="text-gray-400 hover:text-gray-600"
