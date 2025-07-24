@@ -35,7 +35,8 @@ test_data = {
     'demo_project_id': None,  # For ongoing demo project
     'phase_ids': [],
     'category_ids': [],
-    'cost_entry_ids': []
+    'cost_entry_ids': [],
+    'obligation_ids': []  # For obligation testing
 }
 
 def make_request(method, endpoint, data=None, params=None):
