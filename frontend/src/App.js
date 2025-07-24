@@ -125,7 +125,22 @@ const translations = {
     
     // Messages
     costOverrunPredicted: "Cost Overrun Predicted",
-    budgetExceededBy: "Budget expected to be exceeded by"
+    budgetExceededBy: "Budget expected to be exceeded by",
+    
+    // Cost Baseline & Trend Analysis
+    costBaseline: "Cost Baseline",
+    costTrendLine: "Cost Trend Line",
+    budgetAtCompletion: "Budget at Completion (BAC)",
+    currentProgress: "Current Progress",
+    projectedTotalCost: "Projected Total Cost",
+    costEfficiency: "Cost Efficiency",
+    projectedOverrun: "Projected Overrun",
+    good: "Good",
+    fair: "Fair",
+    poor: "Poor",
+    prediction: "Prediction",
+    costVariance: "Cost Variance",
+    scheduleVariance: "Schedule Variance"
   },
   de: {
     // Navigation & General
