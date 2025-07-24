@@ -970,6 +970,11 @@ def run_all_tests():
         ("Cost Entry System", test_cost_entries),
         ("Project Analytics", test_project_analytics),
         ("Dashboard Data", test_dashboard_data),
+        ("Create Ongoing Demo Project", test_create_ongoing_demo_project),
+        ("Enhanced EVM Analysis", test_enhanced_evm_analysis),
+        ("EVM Timeline Data", test_evm_timeline_data),
+        ("Future Phase Analysis", test_future_phase_analysis),
+        ("Comprehensive EVM Integration", test_comprehensive_evm_integration),
         ("Edge Cases", test_edge_cases)
     ]
     
