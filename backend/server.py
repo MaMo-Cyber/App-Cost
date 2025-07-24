@@ -992,7 +992,7 @@ async def create_ongoing_demo_project():
             "description": "System testing, performance optimization, and quality assurance",
             "start_date": (today + timedelta(days=30)).isoformat(),
             "end_date": (today + timedelta(days=150)).isoformat(),
-            "status": "planning",
+            "status": "not_started",
             "budget_allocation": 150000.0,
             "completion_percentage": 0
         },
@@ -1003,7 +1003,7 @@ async def create_ongoing_demo_project():
             "description": "Final deployment, user training, and project handover",
             "start_date": (today + timedelta(days=120)).isoformat(),
             "end_date": project_end.isoformat(),
-            "status": "planning",
+            "status": "not_started",
             "budget_allocation": 50000.0,
             "completion_percentage": 0
         }
