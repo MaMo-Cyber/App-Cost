@@ -328,6 +328,10 @@ const translations = {
     costBreakdown: "Kostenaufschlüsselung",
     recentEntries: "Neueste Einträge",
     projectSummary: "Projektzusammenfassung",
+    totalBudget: "Gesamtbudget",
+    totalSpent: "Gesamt ausgegeben",
+    paidOnly: "Nur Bezahlt",
+    availableIfPaid: "Verfügbar (falls bezahlt)",
     
     // Cost Categories
     equipmentInstallation: "Ausrüstung + Installation",
