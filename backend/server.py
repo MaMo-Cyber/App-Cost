@@ -158,29 +158,64 @@ class ProjectSummary(BaseModel):
     # EVM metrics
     evm_metrics: Optional[Dict[str, Any]] = {}
 
+# Obligation/Commitment Model
+class Obligation(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    project_id: str
+    category_id: str
+    category_name: str
+    description: str
+    amount: float
+    commitment_date: date = Field(default_factory=date.today)
+    expected_incur_date: Optional[date] = None  # When we expect this to become actual cost
+    status: str = "committed"  # committed, cancelled, converted_to_actual
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class ObligationCreate(BaseModel):
+    project_id: str
+    category_id: str
+    description: str
+    amount: float
+    expected_incur_date: Optional[date] = None
+
 class EVMCalculation(BaseModel):
     # Basic values
     budget_at_completion: float  # BAC
     actual_cost: float  # AC
     earned_value: float  # EV
     planned_value: float  # PV
+    total_obligations: float  # Total committed costs
     
-    # Variances
+    # Standard Variances
     cost_variance: float  # CV = EV - AC
     schedule_variance: float  # SV = EV - PV
     
-    # Performance Indices
+    # Standard Performance Indices
     cost_performance_index: float  # CPI = EV / AC
     schedule_performance_index: float  # SPI = EV / PV
     
-    # Forecasting
+    # Enhanced Performance Indices (with obligations)
+    cost_performance_index_adj: float  # CPI_adj = EV / (AC + Obligations)
+    cost_variance_adj: float  # CV_adj = EV - (AC + Obligations)
+    
+    # Standard Forecasting
     estimate_at_completion: float  # EAC = BAC / CPI
     variance_at_completion: float  # VAC = BAC - EAC
     estimate_to_complete: float  # ETC = EAC - AC
     
+    # Enhanced Forecasting (with obligations)
+    estimate_at_completion_adj: float  # EAC_adj = AC + Obligations + ETC_adj
+    variance_at_completion_adj: float  # VAC_adj = BAC - EAC_adj
+    estimate_to_complete_adj: float  # ETC_adj (dynamic based on performance)
+    
     # Status indicators
     cost_status: str  # "Under Budget", "Over Budget", "On Budget"
+    cost_status_adj: str  # Status based on adjusted metrics
     schedule_status: str  # "Ahead", "Behind", "On Schedule"
+    
+    # Risk indicators
+    budget_breach_risk: bool  # True if EAC_adj > BAC
+    breach_severity: str  # "None", "Low", "Medium", "High"
 
 # EVM Calculation Functions
 def calculate_evm_metrics(project: Project, total_spent: float, project_progress: float = None) -> EVMCalculation:
