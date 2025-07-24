@@ -238,7 +238,22 @@ const translations = {
     
     // Messages
     costOverrunPredicted: "Kostenüberschreitung vorhergesagt",
-    budgetExceededBy: "Budget wird voraussichtlich überschritten um"
+    budgetExceededBy: "Budget wird voraussichtlich überschritten um",
+    
+    // Cost Baseline & Trend Analysis
+    costBaseline: "Kostengrundlage",
+    costTrendLine: "Kostentrendlinie",
+    budgetAtCompletion: "Budget bei Fertigstellung (BAC)",
+    currentProgress: "Aktueller Fortschritt",
+    projectedTotalCost: "Prognostizierte Gesamtkosten",
+    costEfficiency: "Kosteneffizienz",
+    projectedOverrun: "Prognostizierte Überschreitung",
+    good: "Gut",
+    fair: "Angemessen",
+    poor: "Schlecht",
+    prediction: "Prognose",
+    costVariance: "Kostenabweichung",
+    scheduleVariance: "Terminabweichung"
   }
 };
 
