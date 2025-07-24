@@ -539,7 +539,98 @@ async def update_cost_category(category_id: str, category_update: CostCategoryCr
     updated_category = await db.cost_categories.find_one({"id": category_id})
     return CostCategory(**updated_category)
 
-# Cost entry routes
+# Obligation/Commitment routes
+@api_router.post("/obligations", response_model=Obligation)
+async def create_obligation(obligation: ObligationCreate):
+    try:
+        # Get category info
+        category = await db.cost_categories.find_one({"id": obligation.category_id})
+        if not category:
+            raise HTTPException(status_code=404, detail="Cost category not found")
+        
+        obligation_dict = obligation.dict()
+        obligation_dict["id"] = str(uuid.uuid4())
+        obligation_dict["category_name"] = category["name"]
+        obligation_dict["status"] = "committed"
+        obligation_dict["created_at"] = datetime.utcnow().isoformat()
+        
+        # Handle dates
+        if obligation_dict.get("expected_incur_date"):
+            if hasattr(obligation_dict["expected_incur_date"], 'isoformat'):
+                obligation_dict["expected_incur_date"] = obligation_dict["expected_incur_date"].isoformat()
+        
+        obligation_dict["commitment_date"] = date.today().isoformat()
+        
+        await db.obligations.insert_one(obligation_dict)
+        
+        # Convert back for response
+        return_data = obligation_dict.copy()
+        if return_data.get("commitment_date"):
+            return_data["commitment_date"] = datetime.fromisoformat(return_data["commitment_date"]).date()
+        if return_data.get("expected_incur_date"):
+            return_data["expected_incur_date"] = datetime.fromisoformat(return_data["expected_incur_date"]).date()
+        if return_data.get("created_at"):
+            return_data["created_at"] = datetime.fromisoformat(return_data["created_at"])
+        
+        return Obligation(**return_data)
+        
+    except Exception as e:
+        logging.error(f"Error creating obligation: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error creating obligation: {str(e)}")
+
+@api_router.get("/projects/{project_id}/obligations", response_model=List[Obligation])
+async def get_project_obligations(project_id: str):
+    obligations = await db.obligations.find({"project_id": project_id, "status": "committed"}).to_list(1000)
+    return [Obligation(**obligation) for obligation in obligations]
+
+@api_router.put("/obligations/{obligation_id}/status")
+async def update_obligation_status(obligation_id: str, status_data: dict):
+    status = status_data.get("status")
+    if status not in ["committed", "cancelled", "converted_to_actual"]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    
+    result = await db.obligations.update_one(
+        {"id": obligation_id}, 
+        {"$set": {"status": status}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Obligation not found")
+    
+    return {"message": "Obligation status updated"}
+
+@api_router.delete("/obligations/{obligation_id}")
+async def delete_obligation(obligation_id: str):
+    result = await db.obligations.delete_one({"id": obligation_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Obligation not found")
+    return {"message": "Obligation deleted"}
+
+@api_router.get("/projects/{project_id}/obligations/summary")
+async def get_project_obligations_summary(project_id: str):
+    """Get summary of obligations by category"""
+    obligations = await db.obligations.find({
+        "project_id": project_id, 
+        "status": "committed"
+    }).to_list(1000)
+    
+    total_obligations = sum(obj.get("amount", 0) for obj in obligations)
+    
+    # Group by category
+    by_category = {}
+    for obj in obligations:
+        category = obj.get("category_name", "Unknown")
+        if category not in by_category:
+            by_category[category] = {"count": 0, "total": 0, "items": []}
+        by_category[category]["count"] += 1
+        by_category[category]["total"] += obj.get("amount", 0)
+        by_category[category]["items"].append(obj)
+    
+    return {
+        "total_obligations": total_obligations,
+        "total_count": len(obligations),
+        "by_category": by_category
+    }
 @api_router.post("/cost-entries", response_model=CostEntry)
 async def create_cost_entry(entry: CostEntryCreate):
     try:
