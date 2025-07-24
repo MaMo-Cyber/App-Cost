@@ -1778,6 +1778,7 @@ def run_all_tests():
         ("Cost Entry System", test_cost_entries),
         ("Project Analytics", test_project_analytics),
         ("Dashboard Data", test_dashboard_data),
+        ("Comprehensive Enhanced EVM System", test_comprehensive_enhanced_evm_system),
         ("Obligation Management API", test_obligation_management),
         ("Enhanced EVM Calculations", test_enhanced_evm_calculations),
         ("Enhanced EVM Timeline", test_enhanced_evm_timeline),
