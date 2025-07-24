@@ -217,7 +217,159 @@ class EVMCalculation(BaseModel):
     budget_breach_risk: bool  # True if EAC_adj > BAC
     breach_severity: str  # "None", "Low", "Medium", "High"
 
-# EVM Calculation Functions
+# Enhanced EVM Calculation Functions
+def calculate_enhanced_evm_metrics(
+    project: Project, 
+    total_spent: float, 
+    total_obligations: float = 0.0,
+    project_progress: float = None,
+    manual_etc: Optional[float] = None,
+    include_obligations: bool = True
+) -> EVMCalculation:
+    """
+    Calculate Enhanced Earned Value Management metrics with obligations
+    
+    Args:
+        project: Project object with budget and estimates
+        total_spent: Actual cost to date (AC)
+        total_obligations: Total committed costs not yet incurred
+        project_progress: Percentage of project completion (0-1)
+        manual_etc: Manual override for Estimate to Complete
+        include_obligations: Whether to include obligations in adjusted calculations
+    """
+    budget_at_completion = project.total_budget  # BAC
+    actual_cost = total_spent  # AC
+    
+    # Calculate project progress if not provided
+    if project_progress is None:
+        today = date.today()
+        project_duration = (project.end_date - project.start_date).days
+        elapsed_days = (today - project.start_date).days
+        project_progress = min(max(elapsed_days / project_duration, 0), 1) if project_duration > 0 else 0
+    
+    # Calculate Planned Value (PV) - based on schedule
+    planned_value = budget_at_completion * project_progress
+    
+    # Calculate Earned Value (EV) - enhanced logic
+    if hasattr(project, 'cost_estimates') and project.cost_estimates:
+        estimated_total = sum(project.cost_estimates.values()) if project.cost_estimates else budget_at_completion
+        if estimated_total > 0:
+            # More sophisticated EV calculation considering both cost and schedule performance
+            cost_based_progress = (actual_cost + total_obligations) / estimated_total
+            schedule_based_progress = project_progress
+            
+            # Weighted average with more emphasis on actual progress indicators
+            estimated_progress = min(
+                (cost_based_progress * 0.4 + schedule_based_progress * 0.6), 
+                1.0
+            )
+            earned_value = estimated_progress * budget_at_completion
+        else:
+            earned_value = planned_value * 0.8
+    else:
+        earned_value = planned_value * 0.8
+    
+    # Ensure EV doesn't exceed BAC
+    earned_value = min(earned_value, budget_at_completion)
+    
+    # Standard calculations
+    cost_variance = earned_value - actual_cost  # CV
+    schedule_variance = earned_value - planned_value  # SV
+    
+    cost_performance_index = earned_value / actual_cost if actual_cost > 0 else 1.0  # CPI
+    schedule_performance_index = earned_value / planned_value if planned_value > 0 else 1.0  # SPI
+    
+    # Enhanced calculations with obligations
+    obligations_amount = total_obligations if include_obligations else 0.0
+    total_committed = actual_cost + obligations_amount
+    
+    cost_performance_index_adj = earned_value / total_committed if total_committed > 0 else 1.0  # CPI_adj
+    cost_variance_adj = earned_value - total_committed  # CV_adj
+    
+    # Standard forecasting
+    estimate_at_completion = budget_at_completion / cost_performance_index if cost_performance_index > 0 else budget_at_completion
+    variance_at_completion = budget_at_completion - estimate_at_completion
+    estimate_to_complete = estimate_at_completion - actual_cost
+    
+    # Enhanced forecasting with obligations
+    if manual_etc is not None:
+        estimate_to_complete_adj = manual_etc
+    else:
+        # Dynamic ETC calculation based on performance
+        remaining_work_percent = max(1.0 - (earned_value / budget_at_completion), 0.0)
+        base_remaining_budget = budget_at_completion * remaining_work_percent
+        
+        # Adjust ETC based on cost performance
+        if cost_performance_index_adj < 1.0:
+            # Performance is poor, increase ETC
+            performance_factor = 1.0 / cost_performance_index_adj
+            estimate_to_complete_adj = base_remaining_budget * performance_factor
+        else:
+            # Performance is good, use conservative estimate
+            estimate_to_complete_adj = base_remaining_budget * 1.1  # 10% buffer
+    
+    estimate_at_completion_adj = actual_cost + obligations_amount + estimate_to_complete_adj
+    variance_at_completion_adj = budget_at_completion - estimate_at_completion_adj
+    
+    # Determine status indicators
+    def get_cost_status(cpi_value):
+        if cpi_value > 1.05:
+            return "Under Budget"
+        elif cpi_value < 0.95:
+            return "Over Budget"
+        else:
+            return "On Budget"
+    
+    cost_status = get_cost_status(cost_performance_index)
+    cost_status_adj = get_cost_status(cost_performance_index_adj)
+    
+    if schedule_performance_index > 1.05:
+        schedule_status = "Ahead"
+    elif schedule_performance_index < 0.95:
+        schedule_status = "Behind"
+    else:
+        schedule_status = "On Schedule"
+    
+    # Risk assessment
+    budget_breach_risk = estimate_at_completion_adj > budget_at_completion
+    
+    if not budget_breach_risk:
+        breach_severity = "None"
+    else:
+        breach_percent = ((estimate_at_completion_adj - budget_at_completion) / budget_at_completion) * 100
+        if breach_percent < 5:
+            breach_severity = "Low"
+        elif breach_percent < 15:
+            breach_severity = "Medium"
+        else:
+            breach_severity = "High"
+    
+    return EVMCalculation(
+        budget_at_completion=budget_at_completion,
+        actual_cost=actual_cost,
+        earned_value=earned_value,
+        planned_value=planned_value,
+        total_obligations=obligations_amount,
+        cost_variance=cost_variance,
+        schedule_variance=schedule_variance,
+        cost_performance_index=cost_performance_index,
+        schedule_performance_index=schedule_performance_index,
+        cost_performance_index_adj=cost_performance_index_adj,
+        cost_variance_adj=cost_variance_adj,
+        estimate_at_completion=estimate_at_completion,
+        variance_at_completion=variance_at_completion,
+        estimate_to_complete=estimate_to_complete,
+        estimate_at_completion_adj=estimate_at_completion_adj,
+        variance_at_completion_adj=variance_at_completion_adj,
+        estimate_to_complete_adj=estimate_to_complete_adj,
+        cost_status=cost_status,
+        cost_status_adj=cost_status_adj,
+        schedule_status=schedule_status,
+        budget_breach_risk=budget_breach_risk,
+        breach_severity=breach_severity
+    )
+
+# Legacy function for backward compatibility
 def calculate_evm_metrics(project: Project, total_spent: float, project_progress: float = None) -> EVMCalculation:
     """
     Calculate Earned Value Management metrics
