@@ -3433,7 +3433,7 @@ const CostEntry = ({ project, onBack }) => {
               onClick={onBack}
               className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
             >
-              ← Back to Dashboard
+              ← {t('backToDashboard')}
             </button>
           </div>
           
