@@ -941,6 +941,399 @@ def test_comprehensive_evm_integration():
     
     return True
 
+def test_obligation_management():
+    """Test the new obligation management API endpoints"""
+    print("\n🧪 Testing Obligation Management API")
+    
+    if not test_data['project_id'] or not test_data['category_ids']:
+        print("  ❌ Missing project ID or category IDs for obligation testing")
+        return False
+    
+    obligation_ids = []
+    
+    # Test 1: Create obligations for different categories
+    print("  🔍 Testing obligation creation...")
+    
+    obligations_data = [
+        {
+            "project_id": test_data['project_id'],
+            "category_id": test_data['category_ids'][0],
+            "description": "Committed purchase order for development hardware",
+            "amount": 25000.0,
+            "expected_incur_date": "2024-08-15"
+        },
+        {
+            "project_id": test_data['project_id'],
+            "category_id": test_data['category_ids'][1] if len(test_data['category_ids']) > 1 else test_data['category_ids'][0],
+            "description": "Software licensing commitment for next quarter",
+            "amount": 15000.0,
+            "expected_incur_date": "2024-09-01"
+        },
+        {
+            "project_id": test_data['project_id'],
+            "category_id": test_data['category_ids'][2] if len(test_data['category_ids']) > 2 else test_data['category_ids'][0],
+            "description": "External consultant contract commitment",
+            "amount": 35000.0,
+            "expected_incur_date": "2024-07-30"
+        }
+    ]
+    
+    for obligation_data in obligations_data:
+        obligation, status = make_request('POST', '/obligations', obligation_data)
+        if status != 200 or not obligation:
+            print(f"  ❌ Failed to create obligation: {obligation_data['description']}")
+            return False
+        
+        obligation_ids.append(obligation['id'])
+        print(f"  ✅ Created obligation: ${obligation['amount']:,.2f} - {obligation['description'][:50]}...")
+    
+    # Test 2: Get project obligations
+    print("  🔍 Testing get project obligations...")
+    
+    obligations, status = make_request('GET', f'/projects/{test_data["project_id"]}/obligations')
+    if status != 200 or not obligations:
+        print("  ❌ Failed to get project obligations")
+        return False
+    
+    if len(obligations) != len(obligations_data):
+        print(f"  ❌ Expected {len(obligations_data)} obligations, got {len(obligations)}")
+        return False
+    
+    total_obligations = sum(obj['amount'] for obj in obligations)
+    expected_total = sum(obj['amount'] for obj in obligations_data)
+    
+    print(f"  ✅ Retrieved {len(obligations)} obligations, total: ${total_obligations:,.2f}")
+    
+    if abs(total_obligations - expected_total) > 0.01:
+        print(f"  ❌ Total obligations amount incorrect: expected ${expected_total:,.2f}, got ${total_obligations:,.2f}")
+        return False
+    
+    # Test 3: Get obligations summary
+    print("  🔍 Testing obligations summary...")
+    
+    summary, status = make_request('GET', f'/projects/{test_data["project_id"]}/obligations/summary')
+    if status != 200 or not summary:
+        print("  ❌ Failed to get obligations summary")
+        return False
+    
+    required_summary_fields = ['total_obligations', 'total_count', 'by_category']
+    for field in required_summary_fields:
+        if field not in summary:
+            print(f"  ❌ Missing summary field: {field}")
+            return False
+    
+    print(f"  ✅ Obligations summary: ${summary['total_obligations']:,.2f} across {summary['total_count']} obligations")
+    print(f"    📊 Categories: {len(summary['by_category'])}")
+    
+    # Test 4: Update obligation status
+    print("  🔍 Testing obligation status update...")
+    
+    if obligation_ids:
+        status_update, status_code = make_request('PUT', f'/obligations/{obligation_ids[0]}/status', {"status": "cancelled"})
+        if status_code != 200:
+            print("  ❌ Failed to update obligation status")
+            return False
+        
+        print("  ✅ Updated obligation status to cancelled")
+        
+        # Verify the status change
+        updated_obligations, status = make_request('GET', f'/projects/{test_data["project_id"]}/obligations')
+        if status != 200:
+            print("  ❌ Failed to verify status update")
+            return False
+        
+        # Should have one less obligation now (cancelled ones are filtered out)
+        if len(updated_obligations) != len(obligations_data) - 1:
+            print(f"  ❌ Expected {len(obligations_data) - 1} active obligations after cancellation, got {len(updated_obligations)}")
+            return False
+        
+        print("  ✅ Obligation status update verified")
+    
+    # Test 5: Delete obligation
+    print("  🔍 Testing obligation deletion...")
+    
+    if len(obligation_ids) > 1:
+        delete_result, status = make_request('DELETE', f'/obligations/{obligation_ids[1]}')
+        if status != 200:
+            print("  ❌ Failed to delete obligation")
+            return False
+        
+        print("  ✅ Deleted obligation successfully")
+        
+        # Verify deletion
+        final_obligations, status = make_request('GET', f'/projects/{test_data["project_id"]}/obligations')
+        if status != 200:
+            print("  ❌ Failed to verify deletion")
+            return False
+        
+        # Should have one less obligation now
+        expected_count = len(obligations_data) - 2  # One cancelled, one deleted
+        if len(final_obligations) != expected_count:
+            print(f"  ❌ Expected {expected_count} obligations after deletion, got {len(final_obligations)}")
+            return False
+        
+        print("  ✅ Obligation deletion verified")
+    
+    # Store remaining obligation IDs for enhanced EVM testing
+    test_data['obligation_ids'] = [obligation_ids[-1]] if obligation_ids else []
+    
+    return True
+
+def test_enhanced_evm_calculations():
+    """Test enhanced EVM calculations with obligations"""
+    print("\n🧪 Testing Enhanced EVM Calculations with Obligations")
+    
+    if not test_data['project_id']:
+        print("  ❌ No project ID available for enhanced EVM testing")
+        return False
+    
+    # Get project summary with enhanced EVM metrics
+    summary, status = make_request('GET', f'/projects/{test_data["project_id"]}/summary')
+    if status != 200 or not summary:
+        print("  ❌ Failed to get project summary for enhanced EVM testing")
+        return False
+    
+    print("  ✅ Retrieved project summary with enhanced EVM metrics")
+    
+    # Check for enhanced EVM fields
+    if 'evm_metrics' not in summary:
+        print("  ❌ Missing EVM metrics in project summary")
+        return False
+    
+    evm = summary['evm_metrics']
+    
+    # Check for enhanced EVM fields with obligations
+    enhanced_fields = [
+        'total_obligations', 'cost_performance_index_adj', 'cost_variance_adj',
+        'estimate_at_completion_adj', 'variance_at_completion_adj', 'estimate_to_complete_adj',
+        'cost_status_adj', 'budget_breach_risk', 'breach_severity'
+    ]
+    
+    for field in enhanced_fields:
+        if field not in evm:
+            print(f"  ❌ Missing enhanced EVM field: {field}")
+            return False
+    
+    print("  ✅ All enhanced EVM fields present")
+    
+    # Display enhanced EVM metrics
+    print(f"    📊 Enhanced EVM Metrics:")
+    print(f"      Total Obligations: ${evm['total_obligations']:,.2f}")
+    print(f"      Standard CPI: {evm['cost_performance_index']:.3f}")
+    print(f"      Adjusted CPI (with obligations): {evm['cost_performance_index_adj']:.3f}")
+    print(f"      Standard EAC: ${evm['estimate_at_completion']:,.2f}")
+    print(f"      Adjusted EAC (with obligations): ${evm['estimate_at_completion_adj']:,.2f}")
+    print(f"      Standard Cost Status: {evm['cost_status']}")
+    print(f"      Adjusted Cost Status: {evm['cost_status_adj']}")
+    print(f"      Budget Breach Risk: {evm['budget_breach_risk']}")
+    print(f"      Breach Severity: {evm['breach_severity']}")
+    
+    # Validate enhanced calculations
+    ac = evm['actual_cost']
+    ev = evm['earned_value']
+    obligations = evm['total_obligations']
+    
+    # Test CPI_adj = EV / (AC + Obligations)
+    if ac + obligations > 0:
+        expected_cpi_adj = ev / (ac + obligations)
+        if abs(evm['cost_performance_index_adj'] - expected_cpi_adj) > 0.001:
+            print(f"  ❌ CPI_adj calculation incorrect: expected {expected_cpi_adj:.3f}, got {evm['cost_performance_index_adj']:.3f}")
+            return False
+    
+    # Test CV_adj = EV - (AC + Obligations)
+    expected_cv_adj = ev - (ac + obligations)
+    if abs(evm['cost_variance_adj'] - expected_cv_adj) > 0.01:
+        print(f"  ❌ CV_adj calculation incorrect: expected {expected_cv_adj:.2f}, got {evm['cost_variance_adj']:.2f}")
+        return False
+    
+    # Test EAC_adj = AC + Obligations + ETC_adj
+    expected_eac_adj = ac + obligations + evm['estimate_to_complete_adj']
+    if abs(evm['estimate_at_completion_adj'] - expected_eac_adj) > 0.01:
+        print(f"  ❌ EAC_adj calculation incorrect: expected {expected_eac_adj:.2f}, got {evm['estimate_at_completion_adj']:.2f}")
+        return False
+    
+    print("  ✅ Enhanced EVM calculations are mathematically correct")
+    
+    # Test budget breach risk assessment
+    bac = evm['budget_at_completion']
+    eac_adj = evm['estimate_at_completion_adj']
+    
+    expected_breach_risk = eac_adj > bac
+    if evm['budget_breach_risk'] != expected_breach_risk:
+        print(f"  ❌ Budget breach risk assessment incorrect: expected {expected_breach_risk}, got {evm['budget_breach_risk']}")
+        return False
+    
+    # Test breach severity levels
+    if evm['budget_breach_risk']:
+        breach_percent = ((eac_adj - bac) / bac) * 100
+        expected_severity = "High" if breach_percent >= 15 else "Medium" if breach_percent >= 5 else "Low"
+        
+        if evm['breach_severity'] not in ["Low", "Medium", "High"]:
+            print(f"  ❌ Invalid breach severity: {evm['breach_severity']}")
+            return False
+        
+        print(f"    ⚠️  Budget breach detected: {breach_percent:.1f}% over budget, severity: {evm['breach_severity']}")
+    else:
+        if evm['breach_severity'] != "None":
+            print(f"  ❌ Breach severity should be 'None' when no breach risk, got '{evm['breach_severity']}'")
+            return False
+    
+    print("  ✅ Budget breach risk assessment is correct")
+    
+    # Test adjusted cost status
+    cpi_adj = evm['cost_performance_index_adj']
+    expected_status_adj = "Under Budget" if cpi_adj > 1.05 else "Over Budget" if cpi_adj < 0.95 else "On Budget"
+    
+    if evm['cost_status_adj'] != expected_status_adj:
+        print(f"  ❌ Adjusted cost status incorrect: expected '{expected_status_adj}', got '{evm['cost_status_adj']}'")
+        return False
+    
+    print("  ✅ Adjusted cost status is correct")
+    
+    # Compare standard vs adjusted metrics
+    cpi_diff = evm['cost_performance_index'] - evm['cost_performance_index_adj']
+    eac_diff = evm['estimate_at_completion_adj'] - evm['estimate_at_completion']
+    
+    print(f"    📈 Impact of Obligations:")
+    print(f"      CPI Impact: {cpi_diff:+.3f} (adjusted CPI is {'lower' if cpi_diff > 0 else 'higher'})")
+    print(f"      EAC Impact: ${eac_diff:+,.2f} (adjusted EAC is {'higher' if eac_diff > 0 else 'lower'})")
+    
+    if obligations > 0 and cpi_diff <= 0:
+        print("  ⚠️  Warning: Expected CPI_adj to be lower than CPI when obligations exist")
+    
+    if obligations > 0 and eac_diff <= 0:
+        print("  ⚠️  Warning: Expected EAC_adj to be higher than EAC when obligations exist")
+    
+    return True
+
+def test_enhanced_evm_timeline():
+    """Test the enhanced EVM timeline endpoint with obligations"""
+    print("\n🧪 Testing Enhanced EVM Timeline with Obligations")
+    
+    if not test_data['project_id']:
+        print("  ❌ No project ID available for enhanced EVM timeline testing")
+        return False
+    
+    # Get enhanced EVM timeline data
+    timeline, status = make_request('GET', f'/projects/{test_data["project_id"]}/evm-timeline-enhanced')
+    if status != 200 or not timeline:
+        print("  ❌ Failed to get enhanced EVM timeline data")
+        return False
+    
+    print("  ✅ Retrieved enhanced EVM timeline data")
+    
+    # Check required timeline fields
+    required_fields = ['timeline_data', 'monthly_data', 'current_metrics', 'project_info']
+    
+    for field in required_fields:
+        if field not in timeline:
+            print(f"  ❌ Missing timeline field: {field}")
+            return False
+    
+    print("  ✅ All required timeline fields present")
+    
+    # Validate timeline data structure
+    timeline_data = timeline['timeline_data']
+    if not timeline_data or len(timeline_data) == 0:
+        print("  ❌ Timeline data is empty")
+        return False
+    
+    print(f"    📊 Timeline data points: {len(timeline_data)}")
+    
+    # Check enhanced timeline data point structure
+    sample_point = timeline_data[0]
+    required_point_fields = [
+        'date', 'month_label', 'planned_value', 'earned_value', 'actual_cost',
+        'total_obligations', 'actual_plus_obligations', 'eac_standard', 'eac_adjusted',
+        'cpi_standard', 'cpi_adjusted', 'spi', 'budget_breach_risk', 'breach_severity', 'is_forecast'
+    ]
+    
+    for field in required_point_fields:
+        if field not in sample_point:
+            print(f"  ❌ Missing timeline point field: {field}")
+            return False
+    
+    print("  ✅ Timeline data points have correct enhanced structure")
+    
+    # Validate current metrics
+    current_metrics = timeline['current_metrics']
+    required_current_fields = [
+        'total_actual', 'total_obligations', 'cpi_standard', 'cpi_adjusted',
+        'spi', 'eac_standard', 'eac_adjusted', 'budget_breach_risk',
+        'breach_severity', 'cost_status', 'cost_status_adj'
+    ]
+    
+    for field in required_current_fields:
+        if field not in current_metrics:
+            print(f"  ❌ Missing current metrics field: {field}")
+            return False
+    
+    print("  ✅ Current metrics have all enhanced fields")
+    
+    # Display current enhanced metrics
+    print(f"    🎯 Current Enhanced Metrics:")
+    print(f"      Total Actual: ${current_metrics['total_actual']:,.2f}")
+    print(f"      Total Obligations: ${current_metrics['total_obligations']:,.2f}")
+    print(f"      Standard CPI: {current_metrics['cpi_standard']:.3f}")
+    print(f"      Adjusted CPI: {current_metrics['cpi_adjusted']:.3f}")
+    print(f"      Standard EAC: ${current_metrics['eac_standard']:,.2f}")
+    print(f"      Adjusted EAC: ${current_metrics['eac_adjusted']:,.2f}")
+    print(f"      Budget Breach Risk: {current_metrics['budget_breach_risk']}")
+    print(f"      Breach Severity: {current_metrics['breach_severity']}")
+    print(f"      Standard Cost Status: {current_metrics['cost_status']}")
+    print(f"      Adjusted Cost Status: {current_metrics['cost_status_adj']}")
+    
+    # Validate mathematical consistency in timeline data
+    for i, point in enumerate(timeline_data[:3]):  # Check first 3 points
+        # Validate actual_plus_obligations = actual_cost + total_obligations
+        expected_total = point['actual_cost'] + point['total_obligations']
+        if abs(point['actual_plus_obligations'] - expected_total) > 0.01:
+            print(f"  ❌ Point {i}: actual_plus_obligations calculation incorrect")
+            return False
+        
+        # Validate CPI calculations
+        if point['actual_cost'] > 0:
+            expected_cpi_standard = point['earned_value'] / point['actual_cost']
+            if abs(point['cpi_standard'] - expected_cpi_standard) > 0.001:
+                print(f"  ❌ Point {i}: CPI standard calculation incorrect")
+                return False
+        
+        if point['actual_plus_obligations'] > 0:
+            expected_cpi_adjusted = point['earned_value'] / point['actual_plus_obligations']
+            if abs(point['cpi_adjusted'] - expected_cpi_adjusted) > 0.001:
+                print(f"  ❌ Point {i}: CPI adjusted calculation incorrect")
+                return False
+    
+    print("  ✅ Timeline data mathematical consistency verified")
+    
+    # Check for future projections with obligations
+    future_points = [point for point in timeline_data if point.get('is_forecast', False)]
+    if len(future_points) > 0:
+        print(f"    🔮 Future projection points: {len(future_points)}")
+        
+        # Check that future points include obligation projections
+        future_with_obligations = [p for p in future_points if p['total_obligations'] > 0]
+        if len(future_with_obligations) > 0:
+            print(f"    💰 Future points with obligations: {len(future_with_obligations)}")
+        
+        # Check EAC progression in future points
+        last_point = future_points[-1]
+        print(f"    📈 Final EAC Standard: ${last_point['eac_standard']:,.2f}")
+        print(f"    📈 Final EAC Adjusted: ${last_point['eac_adjusted']:,.2f}")
+    
+    # Validate project info
+    project_info = timeline['project_info']
+    required_project_fields = ['name', 'total_budget', 'start_date', 'end_date']
+    
+    for field in required_project_fields:
+        if field not in project_info:
+            print(f"  ❌ Missing project info field: {field}")
+            return False
+    
+    print(f"  ✅ Project info complete: {project_info['name']}, Budget: ${project_info['total_budget']:,.2f}")
+    
+    return True
+
 def test_edge_cases():
     """Test edge cases and error handling"""
     print("\n🧪 Testing Edge Cases")
@@ -971,6 +1364,34 @@ def test_edge_cases():
         print("  ❌ Should return 404 for EVM timeline of invalid project")
         return False
     print("  ✅ Correctly handles invalid project ID for EVM timeline")
+    
+    # Test enhanced EVM timeline for non-existent project
+    invalid_enhanced_timeline, status = make_request('GET', '/projects/invalid-id/evm-timeline-enhanced')
+    if status != 404:
+        print("  ❌ Should return 404 for enhanced EVM timeline of invalid project")
+        return False
+    print("  ✅ Correctly handles invalid project ID for enhanced EVM timeline")
+    
+    # Test invalid obligation creation
+    invalid_obligation = {
+        "project_id": "invalid-project-id",
+        "category_id": "invalid-category-id",
+        "description": "Invalid obligation",
+        "amount": 1000.0
+    }
+    
+    result, status = make_request('POST', '/obligations', invalid_obligation)
+    if status not in [400, 404, 500]:  # Should fail
+        print("  ❌ Should reject obligation with invalid project/category")
+        return False
+    print("  ✅ Correctly rejects invalid obligation")
+    
+    # Test invalid obligation status update
+    invalid_status, status = make_request('PUT', '/obligations/invalid-id/status', {"status": "invalid_status"})
+    if status not in [400, 404]:
+        print("  ❌ Should reject invalid obligation status")
+        return False
+    print("  ✅ Correctly rejects invalid obligation status")
     
     return True
 
