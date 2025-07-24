@@ -127,6 +127,24 @@ const translations = {
     ahead: "Ahead",
     onSchedule: "On Schedule",
     
+    // Enhanced EVM Terms
+    obligations: "Obligations",
+    committed: "Committed",
+    adjustedCPI: "Adjusted CPI",
+    adjustedEAC: "Adjusted EAC",
+    standardMetrics: "Standard Metrics",
+    adjustedMetrics: "Adjusted Metrics (with Obligations)",
+    includeObligations: "Include Obligations in Calculations",
+    obligationsTooltip: "Committed costs (POs, contracts) not yet incurred",
+    budgetBreachRisk: "Budget Breach Risk",
+    breachSeverity: "Breach Severity",
+    addObligation: "Add Obligation",
+    manageObligations: "Manage Obligations",
+    obligationAmount: "Obligation Amount",
+    expectedIncurDate: "Expected Incur Date",
+    commitmentDate: "Commitment Date",
+    obligationDescription: "Obligation Description",
+    
     // Status & Indicators
     outstanding: "Outstanding",
     paid: "Paid",
