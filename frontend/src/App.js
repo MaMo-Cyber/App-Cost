@@ -1514,7 +1514,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
     labels: ['Budget Allocated', 'Amount Spent', 'Remaining (Actual)'],
     datasets: [
       {
-        label: 'Budget Analysis',
+        label: t('budgetAnalysis'),
         data: [
           summary.project.total_budget,
           summary.total_spent,
