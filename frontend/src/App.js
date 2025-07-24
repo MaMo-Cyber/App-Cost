@@ -861,7 +861,7 @@ const PaymentTimeline = ({ project, onBack }) => {
             {/* Overdue Section */}
             {timeline_data.overdue.length > 0 && (
               <div className="border-l-4 border-red-500 pl-6">
-                <h3 className="text-xl font-bold text-red-700 mb-4">🚨 OVERDUE PAYMENTS</h3>
+                <h3 className="text-xl font-bold text-red-700 mb-4">🚨 {t('overduePayments')}</h3>
                 <div className="space-y-3">
                   {timeline_data.overdue.map((entry) => (
                     <div key={entry.id} className="bg-red-50 border border-red-200 rounded-lg p-4">
