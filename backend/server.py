@@ -237,28 +237,44 @@ class EVMCalculation(BaseModel):
     budget_breach_risk: bool  # True if EAC_adj > BAC
     breach_severity: str  # "None", "Low", "Medium", "High"
 
-# Enhanced EVM Calculation Functions
+# Enhanced EVM Calculation Functions with Weighted Obligations
 def calculate_enhanced_evm_metrics(
     project: Project, 
     total_spent: float, 
-    total_obligations: float = 0.0,
+    obligations_data: List[dict] = None,
     project_progress: float = None,
     manual_etc: Optional[float] = None,
     include_obligations: bool = True
 ) -> EVMCalculation:
     """
-    Calculate Enhanced Earned Value Management metrics with obligations
+    Calculate Enhanced Earned Value Management metrics with weighted obligations
     
     Args:
         project: Project object with budget and estimates
         total_spent: Actual cost to date (AC)
-        total_obligations: Total committed costs not yet incurred
+        obligations_data: List of obligation dictionaries with confidence levels
         project_progress: Percentage of project completion (0-1)
         manual_etc: Manual override for Estimate to Complete
         include_obligations: Whether to include obligations in adjusted calculations
     """
     budget_at_completion = project.total_budget  # BAC
     actual_cost = total_spent  # AC
+    
+    # Calculate weighted obligations based on confidence levels
+    total_obligations = 0.0
+    if obligations_data and include_obligations:
+        confidence_weights = {
+            "high": 0.95,
+            "medium": 0.80, 
+            "low": 0.60
+        }
+        
+        for obligation in obligations_data:
+            if obligation.get("status") == "active":
+                confidence = obligation.get("confidence_level", "medium")
+                weight = confidence_weights.get(confidence, 0.80)
+                amount = obligation.get("amount", 0)
+                total_obligations += amount * weight
     
     # Calculate project progress if not provided
     if project_progress is None:
@@ -275,7 +291,7 @@ def calculate_enhanced_evm_metrics(
         estimated_total = sum(project.cost_estimates.values()) if project.cost_estimates else budget_at_completion
         if estimated_total > 0:
             # More sophisticated EV calculation considering both cost and schedule performance
-            cost_based_progress = (actual_cost + total_obligations) / estimated_total
+            cost_based_progress = (actual_cost + (total_obligations * 0.5)) / estimated_total  # 50% weight for obligations
             schedule_based_progress = project_progress
             
             # Weighted average with more emphasis on actual progress indicators
@@ -299,9 +315,8 @@ def calculate_enhanced_evm_metrics(
     cost_performance_index = earned_value / actual_cost if actual_cost > 0 else 1.0  # CPI
     schedule_performance_index = earned_value / planned_value if planned_value > 0 else 1.0  # SPI
     
-    # Enhanced calculations with obligations
-    obligations_amount = total_obligations if include_obligations else 0.0
-    total_committed = actual_cost + obligations_amount
+    # Enhanced calculations with weighted obligations
+    total_committed = actual_cost + total_obligations
     
     cost_performance_index_adj = earned_value / total_committed if total_committed > 0 else 1.0  # CPI_adj
     cost_variance_adj = earned_value - total_committed  # CV_adj
@@ -311,11 +326,11 @@ def calculate_enhanced_evm_metrics(
     variance_at_completion = budget_at_completion - estimate_at_completion
     estimate_to_complete = estimate_at_completion - actual_cost
     
-    # Enhanced forecasting with obligations
+    # Enhanced forecasting with weighted obligations
     if manual_etc is not None:
         estimate_to_complete_adj = manual_etc
     else:
-        # Dynamic ETC calculation based on performance
+        # Dynamic ETC calculation based on adjusted performance
         remaining_work_percent = max(1.0 - (earned_value / budget_at_completion), 0.0)
         base_remaining_budget = budget_at_completion * remaining_work_percent
         
@@ -326,16 +341,16 @@ def calculate_enhanced_evm_metrics(
             estimate_to_complete_adj = base_remaining_budget * performance_factor
         else:
             # Performance is good, use conservative estimate
-            estimate_to_complete_adj = base_remaining_budget * 1.1  # 10% buffer
+            estimate_to_complete_adj = base_remaining_budget * 1.05  # 5% buffer
     
-    estimate_at_completion_adj = actual_cost + obligations_amount + estimate_to_complete_adj
+    estimate_at_completion_adj = actual_cost + total_obligations + estimate_to_complete_adj
     variance_at_completion_adj = budget_at_completion - estimate_at_completion_adj
     
-    # Determine status indicators
+    # Determine status indicators with enhanced thresholds
     def get_cost_status(cpi_value):
         if cpi_value > 1.05:
             return "Under Budget"
-        elif cpi_value < 0.95:
+        elif cpi_value < 0.90:  # Stricter threshold for adjusted metrics
             return "Over Budget"
         else:
             return "On Budget"
@@ -350,7 +365,7 @@ def calculate_enhanced_evm_metrics(
     else:
         schedule_status = "On Schedule"
     
-    # Risk assessment
+    # Enhanced risk assessment with early warning thresholds
     budget_breach_risk = estimate_at_completion_adj > budget_at_completion
     
     if not budget_breach_risk:
@@ -359,17 +374,26 @@ def calculate_enhanced_evm_metrics(
         breach_percent = ((estimate_at_completion_adj - budget_at_completion) / budget_at_completion) * 100
         if breach_percent < 5:
             breach_severity = "Low"
-        elif breach_percent < 15:
+        elif breach_percent < 10:  # Stricter thresholds
             breach_severity = "Medium"
         else:
             breach_severity = "High"
+    
+    # Early warning indicators
+    early_warnings = []
+    if cost_performance_index_adj < 0.90:
+        early_warnings.append("COST_CONTROL_ALERT")
+    if estimate_at_completion_adj > (budget_at_completion * 1.10):
+        early_warnings.append("FORMAL_CHANGE_REVIEW")
+    if breach_severity == "High":
+        early_warnings.append("STAKEHOLDER_NOTIFICATION")
     
     return EVMCalculation(
         budget_at_completion=budget_at_completion,
         actual_cost=actual_cost,
         earned_value=earned_value,
         planned_value=planned_value,
-        total_obligations=obligations_amount,
+        total_obligations=total_obligations,
         cost_variance=cost_variance,
         schedule_variance=schedule_variance,
         cost_performance_index=cost_performance_index,
@@ -386,7 +410,8 @@ def calculate_enhanced_evm_metrics(
         cost_status_adj=cost_status_adj,
         schedule_status=schedule_status,
         budget_breach_risk=budget_breach_risk,
-        breach_severity=breach_severity
+        breach_severity=breach_severity,
+        early_warnings=early_warnings
     )
 
 # Legacy function for backward compatibility
