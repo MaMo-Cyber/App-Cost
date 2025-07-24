@@ -1121,12 +1121,11 @@ async def get_project_summary(project_id: str):
     cost_entries = await db.cost_entries.find({"project_id": project_id}).to_list(1000)
     total_spent = sum(entry.get("total_amount", 0) for entry in cost_entries)
     
-    # Get obligations
+    # Get active obligations with all details for weighted calculation
     obligations = await db.obligations.find({
         "project_id": project_id, 
-        "status": "committed"
+        "status": "active"
     }).to_list(1000)
-    total_obligations = sum(obj.get("amount", 0) for obj in obligations)
     
     # Calculate outstanding vs paid
     outstanding_entries = [entry for entry in cost_entries if entry.get("status") == "outstanding"]
@@ -1193,14 +1192,26 @@ async def get_project_summary(project_id: str):
     else:
         status_indicator = "over_budget"
     
-    # Calculate Enhanced EVM metrics
+    # Calculate Enhanced EVM metrics with weighted obligations
     project_obj = Project(**project)
     evm_metrics = calculate_enhanced_evm_metrics(
         project=project_obj, 
         total_spent=total_spent,
-        total_obligations=total_obligations,
+        obligations_data=obligations,  # Pass full obligation data for weighting
         include_obligations=True
     )
+    
+    # Add obligation summary to response
+    obligation_summary = {
+        "total_count": len(obligations),
+        "total_amount": sum(obj.get("amount", 0) for obj in obligations),
+        "weighted_amount": evm_metrics.total_obligations,
+        "by_confidence": {
+            "high": sum(obj.get("amount", 0) for obj in obligations if obj.get("confidence_level") == "high"),
+            "medium": sum(obj.get("amount", 0) for obj in obligations if obj.get("confidence_level") == "medium"),
+            "low": sum(obj.get("amount", 0) for obj in obligations if obj.get("confidence_level") == "low")
+        }
+    }
     
     return ProjectSummary(
         project=Project(**project),
@@ -1216,7 +1227,8 @@ async def get_project_summary(project_id: str):
         paid_breakdown=paid_breakdown,
         trend_data=trend_list,
         status_indicator=status_indicator,
-        evm_metrics=evm_metrics.dict()
+        evm_metrics=evm_metrics.dict(),
+        obligation_summary=obligation_summary
     )
 
 @api_router.get("/projects/{project_id}/dashboard-data")
