@@ -757,6 +757,7 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
 const PaymentTimeline = ({ project, onBack }) => {
   const [timelineData, setTimelineData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     fetchTimelineData();
