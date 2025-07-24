@@ -754,6 +754,10 @@ async def get_project_obligations_summary(project_id: str):
     # Group by category
     by_category = {}
     for obj in obligations:
+        # Remove MongoDB _id field to avoid serialization issues
+        if "_id" in obj:
+            del obj["_id"]
+            
         category = obj.get("category_name", "Unknown")
         if category not in by_category:
             by_category[category] = {"count": 0, "total": 0, "items": []}
