@@ -445,7 +445,7 @@ async def get_enhanced_evm_timeline(project_id: str):
     cost_entries = await db.cost_entries.find({"project_id": project_id}).to_list(1000)
     obligations = await db.obligations.find({
         "project_id": project_id, 
-        "status": "committed"
+        "status": "active"
     }).to_list(1000)
     
     # Generate timeline data points
