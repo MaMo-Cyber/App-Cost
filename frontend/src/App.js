@@ -314,6 +314,11 @@ const translations = {
     totalBudget: "Gesamtbudget",
     budgetUtilization: "Budgetnutzung",
     entries: "Einträge",
+    outstandingCosts: "Ausstehende Kosten",
+    paidCosts: "Bezahlte Kosten",
+    totalCosts: "Gesamtkosten",
+    noOutstandingCosts: "Keine ausstehenden Kosten! 🎉",
+    noPaidCosts: "Noch keine bezahlten Kosten.",
     
     // Summary Labels
     costBreakdown: "Kostenaufschlüsselung",
