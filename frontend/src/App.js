@@ -1122,7 +1122,7 @@ const CostStatusManager = ({ project, onBack }) => {
             </div>
             
             <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-              <h3 className="text-lg font-semibold text-green-800 mb-2">Paid Costs</h3>
+              <h3 className="text-lg font-semibold text-green-800 mb-2">{t('paidCosts')}</h3>
               <p className="text-3xl font-bold text-green-600">€{paidTotal.toLocaleString()}</p>
               <p className="text-sm text-green-600">{paidCosts.length} entries</p>
             </div>
