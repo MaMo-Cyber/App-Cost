@@ -204,7 +204,7 @@ class EVMCalculation(BaseModel):
     actual_cost: float  # AC
     earned_value: float  # EV
     planned_value: float  # PV
-    total_obligations: float  # Total committed costs
+    total_obligations: float  # Total committed costs (weighted)
     
     # Standard Variances
     cost_variance: float  # CV = EV - AC
@@ -214,17 +214,17 @@ class EVMCalculation(BaseModel):
     cost_performance_index: float  # CPI = EV / AC
     schedule_performance_index: float  # SPI = EV / PV
     
-    # Enhanced Performance Indices (with obligations)
-    cost_performance_index_adj: float  # CPI_adj = EV / (AC + Obligations)
-    cost_variance_adj: float  # CV_adj = EV - (AC + Obligations)
+    # Enhanced Performance Indices (with weighted obligations)
+    cost_performance_index_adj: float  # CPI_adj = EV / (AC + Weighted_Obligations)
+    cost_variance_adj: float  # CV_adj = EV - (AC + Weighted_Obligations)
     
     # Standard Forecasting
     estimate_at_completion: float  # EAC = BAC / CPI
     variance_at_completion: float  # VAC = BAC - EAC
     estimate_to_complete: float  # ETC = EAC - AC
     
-    # Enhanced Forecasting (with obligations)
-    estimate_at_completion_adj: float  # EAC_adj = AC + Obligations + ETC_adj
+    # Enhanced Forecasting (with weighted obligations)
+    estimate_at_completion_adj: float  # EAC_adj = AC + Weighted_Obligations + ETC_adj
     variance_at_completion_adj: float  # VAC_adj = BAC - EAC_adj
     estimate_to_complete_adj: float  # ETC_adj (dynamic based on performance)
     
@@ -233,9 +233,10 @@ class EVMCalculation(BaseModel):
     cost_status_adj: str  # Status based on adjusted metrics
     schedule_status: str  # "Ahead", "Behind", "On Schedule"
     
-    # Risk indicators
+    # Risk indicators with early warning system
     budget_breach_risk: bool  # True if EAC_adj > BAC
     breach_severity: str  # "None", "Low", "Medium", "High"
+    early_warnings: List[str] = Field(default_factory=list)  # List of triggered alerts
 
 # Enhanced EVM Calculation Functions with Weighted Obligations
 def calculate_enhanced_evm_metrics(
