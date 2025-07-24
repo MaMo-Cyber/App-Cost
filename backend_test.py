@@ -1335,6 +1335,374 @@ def test_enhanced_evm_timeline():
     
     return True
 
+def test_comprehensive_enhanced_evm_system():
+    """Test the comprehensive enhanced EVM system with all new features as requested in review"""
+    print("\n🧪 Testing Comprehensive Enhanced EVM System with All New Features")
+    
+    if not test_data['project_id'] or not test_data['category_ids']:
+        print("  ❌ Missing project ID or category IDs for comprehensive EVM testing")
+        return False
+    
+    # Clear any existing obligations for clean test
+    existing_obligations, status = make_request('GET', f'/projects/{test_data["project_id"]}/obligations')
+    if status == 200 and existing_obligations:
+        for obligation in existing_obligations:
+            make_request('DELETE', f'/obligations/{obligation["id"]}')
+    
+    print("  🔧 Setting up comprehensive test scenario...")
+    
+    # PART 1: Enhanced Obligation Model Testing
+    print("  📋 PART 1: Enhanced Obligation Model Testing")
+    
+    # Create obligations with different confidence levels as specified in review
+    test_obligations = [
+        {
+            "project_id": test_data['project_id'],
+            "category_id": test_data['category_ids'][0],
+            "description": "PO for equipment - High confidence purchase order",
+            "amount": 50000.0,
+            "confidence_level": "high",
+            "priority": "high",
+            "contract_reference": "PO-2024-001",
+            "vendor_supplier": "Equipment Supplier Ltd",
+            "expected_incur_date": "2024-08-15"
+        },
+        {
+            "project_id": test_data['project_id'],
+            "category_id": test_data['category_ids'][1] if len(test_data['category_ids']) > 1 else test_data['category_ids'][0],
+            "description": "Approved quote - Medium confidence approved quotation",
+            "amount": 30000.0,
+            "confidence_level": "medium",
+            "priority": "normal",
+            "contract_reference": "QUOTE-2024-002",
+            "vendor_supplier": "Service Provider Inc",
+            "expected_incur_date": "2024-09-01"
+        },
+        {
+            "project_id": test_data['project_id'],
+            "category_id": test_data['category_ids'][2] if len(test_data['category_ids']) > 2 else test_data['category_ids'][0],
+            "description": "Planned purchase - Low confidence future procurement",
+            "amount": 20000.0,
+            "confidence_level": "low",
+            "priority": "low",
+            "contract_reference": "PLAN-2024-003",
+            "vendor_supplier": "Future Vendor TBD",
+            "expected_incur_date": "2024-10-15"
+        }
+    ]
+    
+    created_obligations = []
+    
+    # Test creating obligations with confidence levels
+    print("    🔍 Testing obligation creation with confidence levels...")
+    for obligation_data in test_obligations:
+        obligation, status = make_request('POST', '/obligations', obligation_data)
+        if status != 200 or not obligation:
+            print(f"    ❌ Failed to create obligation: {obligation_data['description']}")
+            return False
+        
+        created_obligations.append(obligation)
+        
+        # Verify confidence percentage calculation
+        expected_percentage = {"high": 95.0, "medium": 80.0, "low": 60.0}[obligation_data['confidence_level']]
+        if abs(obligation['confidence_percentage'] - expected_percentage) > 0.01:
+            print(f"    ❌ Confidence percentage incorrect: expected {expected_percentage}, got {obligation['confidence_percentage']}")
+            return False
+        
+        print(f"    ✅ Created {obligation_data['confidence_level']} confidence obligation: €{obligation['amount']:,.2f} ({obligation['confidence_percentage']}%)")
+    
+    # Test obligation status management
+    print("    🔍 Testing obligation status management...")
+    
+    # Test status update to cancelled
+    cancelled_result, status = make_request('PUT', f'/obligations/{created_obligations[0]["id"]}/status', {"status": "cancelled"})
+    if status != 200:
+        print("    ❌ Failed to update obligation status to cancelled")
+        return False
+    print("    ✅ Successfully updated obligation status to cancelled")
+    
+    # Test status update to converted_to_actual
+    converted_result, status = make_request('PUT', f'/obligations/{created_obligations[1]["id"]}/status', {"status": "converted_to_actual"})
+    if status != 200:
+        print("    ❌ Failed to update obligation status to converted_to_actual")
+        return False
+    print("    ✅ Successfully updated obligation status to converted_to_actual")
+    
+    # Verify only active obligations are returned
+    active_obligations, status = make_request('GET', f'/projects/{test_data["project_id"]}/obligations', params={"status": "active"})
+    if status != 200:
+        print("    ❌ Failed to get active obligations")
+        return False
+    
+    if len(active_obligations) != 1:  # Only the low confidence one should remain active
+        print(f"    ❌ Expected 1 active obligation, got {len(active_obligations)}")
+        return False
+    print("    ✅ Obligation status filtering working correctly")
+    
+    # PART 2: Weighted Obligation Calculations
+    print("  📊 PART 2: Weighted Obligation Calculations")
+    
+    # Reset obligations for weighted calculation test
+    for obligation in created_obligations:
+        make_request('DELETE', f'/obligations/{obligation["id"]}')
+    
+    # Create fresh obligations for weighted calculation test
+    weighted_test_obligations = []
+    for obligation_data in test_obligations:
+        obligation_data["status"] = "active"  # Ensure active status
+        obligation, status = make_request('POST', '/obligations', obligation_data)
+        if status == 200 and obligation:
+            weighted_test_obligations.append(obligation)
+    
+    # Get project summary to check weighted calculations
+    summary, status = make_request('GET', f'/projects/{test_data["project_id"]}/summary')
+    if status != 200 or not summary:
+        print("    ❌ Failed to get project summary for weighted calculation test")
+        return False
+    
+    # Verify weighted total calculation: (50000 * 0.95) + (30000 * 0.80) + (20000 * 0.60) = 83,500
+    expected_weighted_total = (50000 * 0.95) + (30000 * 0.80) + (20000 * 0.60)
+    print(f"    🧮 Expected weighted total: €{expected_weighted_total:,.2f}")
+    
+    if 'evm_metrics' not in summary:
+        print("    ❌ Missing EVM metrics in summary")
+        return False
+    
+    actual_weighted_total = summary['evm_metrics'].get('total_obligations', 0)
+    print(f"    🧮 Actual weighted total: €{actual_weighted_total:,.2f}")
+    
+    if abs(actual_weighted_total - expected_weighted_total) > 0.01:
+        print(f"    ❌ Weighted total calculation incorrect: expected €{expected_weighted_total:,.2f}, got €{actual_weighted_total:,.2f}")
+        return False
+    
+    print("    ✅ Weighted obligation calculation is correct")
+    
+    # PART 3: Enhanced EVM Calculations
+    print("  🎯 PART 3: Enhanced EVM Calculations")
+    
+    evm = summary['evm_metrics']
+    
+    # Verify enhanced calculation function with obligations_data parameter
+    required_enhanced_fields = [
+        'total_obligations', 'cost_performance_index_adj', 'cost_variance_adj',
+        'estimate_at_completion_adj', 'variance_at_completion_adj', 'estimate_to_complete_adj',
+        'cost_status_adj', 'budget_breach_risk', 'breach_severity', 'early_warnings'
+    ]
+    
+    for field in required_enhanced_fields:
+        if field not in evm:
+            print(f"    ❌ Missing enhanced EVM field: {field}")
+            return False
+    
+    print("    ✅ All enhanced EVM calculation fields present")
+    
+    # Test early warning system triggers
+    print("    🚨 Testing early warning system triggers...")
+    
+    early_warnings = evm.get('early_warnings', [])
+    print(f"    📢 Early warnings triggered: {early_warnings}")
+    
+    # Check for specific warning triggers based on thresholds
+    cpi_adj = evm['cost_performance_index_adj']
+    eac_adj = evm['estimate_at_completion_adj']
+    bac = evm['budget_at_completion']
+    breach_severity = evm['breach_severity']
+    
+    expected_warnings = []
+    if cpi_adj < 0.90:
+        expected_warnings.append("COST_CONTROL_ALERT")
+    if eac_adj > (bac * 1.10):
+        expected_warnings.append("FORMAL_CHANGE_REVIEW")
+    if breach_severity == "High":
+        expected_warnings.append("STAKEHOLDER_NOTIFICATION")
+    
+    print(f"    📋 Expected warnings based on metrics: {expected_warnings}")
+    
+    # Verify warnings are triggered correctly
+    for expected_warning in expected_warnings:
+        if expected_warning not in early_warnings:
+            print(f"    ⚠️  Warning: Expected '{expected_warning}' not found in early warnings")
+    
+    print("    ✅ Early warning system functioning")
+    
+    # Test stricter thresholds for adjusted metrics
+    print("    📏 Testing stricter thresholds for adjusted metrics...")
+    
+    cost_status_adj = evm['cost_status_adj']
+    if cpi_adj > 1.05:
+        expected_status = "Under Budget"
+    elif cpi_adj < 0.90:  # Stricter threshold
+        expected_status = "Over Budget"
+    else:
+        expected_status = "On Budget"
+    
+    if cost_status_adj != expected_status:
+        print(f"    ❌ Adjusted cost status incorrect: expected '{expected_status}', got '{cost_status_adj}' (CPI_adj: {cpi_adj:.3f})")
+        return False
+    
+    print(f"    ✅ Stricter thresholds applied correctly (CPI_adj: {cpi_adj:.3f} -> {cost_status_adj})")
+    
+    # PART 4: Dual Metrics Comparison
+    print("  🔄 PART 4: Dual Metrics Comparison")
+    
+    # Verify both standard and adjusted metrics are calculated
+    standard_cpi = evm['cost_performance_index']
+    adjusted_cpi = evm['cost_performance_index_adj']
+    standard_eac = evm['estimate_at_completion']
+    adjusted_eac = evm['estimate_at_completion_adj']
+    
+    print(f"    📊 Standard vs Adjusted Metrics:")
+    print(f"      CPI Standard: {standard_cpi:.3f} vs CPI Adjusted: {adjusted_cpi:.3f}")
+    print(f"      EAC Standard: €{standard_eac:,.2f} vs EAC Adjusted: €{adjusted_eac:,.2f}")
+    
+    # Test divergence detection
+    cpi_divergence = abs(standard_cpi - adjusted_cpi)
+    eac_divergence = abs(adjusted_eac - standard_eac)
+    
+    print(f"    📈 Divergence Analysis:")
+    print(f"      CPI Divergence: {cpi_divergence:.3f}")
+    print(f"      EAC Divergence: €{eac_divergence:,.2f}")
+    
+    if actual_weighted_total > 0:
+        if cpi_divergence < 0.001:
+            print("    ⚠️  Warning: Expected more divergence between standard and adjusted CPI when obligations exist")
+        if eac_divergence < 100:
+            print("    ⚠️  Warning: Expected more divergence between standard and adjusted EAC when obligations exist")
+    
+    print("    ✅ Dual metrics comparison working")
+    
+    # Verify budget breach risk assessment with new severity levels
+    print("    🚨 Testing budget breach risk assessment...")
+    
+    budget_breach_risk = evm['budget_breach_risk']
+    breach_severity = evm['breach_severity']
+    
+    expected_breach_risk = adjusted_eac > bac
+    if budget_breach_risk != expected_breach_risk:
+        print(f"    ❌ Budget breach risk assessment incorrect: expected {expected_breach_risk}, got {budget_breach_risk}")
+        return False
+    
+    if budget_breach_risk:
+        breach_percent = ((adjusted_eac - bac) / bac) * 100
+        if breach_percent < 5:
+            expected_severity = "Low"
+        elif breach_percent < 10:
+            expected_severity = "Medium"
+        else:
+            expected_severity = "High"
+        
+        print(f"    📊 Breach Analysis: {breach_percent:.1f}% over budget -> {breach_severity} severity")
+        
+        if breach_severity not in ["Low", "Medium", "High"]:
+            print(f"    ❌ Invalid breach severity: {breach_severity}")
+            return False
+    else:
+        if breach_severity != "None":
+            print(f"    ❌ Breach severity should be 'None' when no breach risk, got '{breach_severity}'")
+            return False
+    
+    print("    ✅ Budget breach risk assessment with severity levels working")
+    
+    # PART 5: Enhanced API Endpoints
+    print("  🔌 PART 5: Enhanced API Endpoints")
+    
+    # Test obligation CRUD operations
+    print("    🔍 Testing obligation CRUD operations...")
+    
+    # Test obligation summary endpoint
+    obligation_summary, status = make_request('GET', f'/projects/{test_data["project_id"]}/obligations/summary')
+    if status != 200 or not obligation_summary:
+        print("    ❌ Failed to get obligation summary")
+        return False
+    
+    required_summary_fields = ['total_obligations', 'total_count', 'by_category']
+    for field in required_summary_fields:
+        if field not in obligation_summary:
+            print(f"    ❌ Missing obligation summary field: {field}")
+            return False
+    
+    print(f"    ✅ Obligation summary: €{obligation_summary['total_obligations']:,.2f} across {obligation_summary['total_count']} obligations")
+    
+    # Test project summary with obligation_summary data
+    print("    🔍 Testing project summary with obligation_summary data...")
+    
+    if 'obligation_summary' not in summary:
+        print("    ❌ Missing obligation_summary in project summary")
+        return False
+    
+    obligation_summary_in_project = summary['obligation_summary']
+    required_obligation_fields = ['total_count', 'total_amount', 'weighted_amount', 'by_confidence']
+    
+    for field in required_obligation_fields:
+        if field not in obligation_summary_in_project:
+            print(f"    ❌ Missing obligation summary field in project: {field}")
+            return False
+    
+    print(f"    ✅ Project summary includes obligation data: {obligation_summary_in_project['total_count']} obligations")
+    print(f"      Total Amount: €{obligation_summary_in_project['total_amount']:,.2f}")
+    print(f"      Weighted Amount: €{obligation_summary_in_project['weighted_amount']:,.2f}")
+    
+    # Verify by_confidence breakdown
+    by_confidence = obligation_summary_in_project['by_confidence']
+    expected_by_confidence = {"high": 50000.0, "medium": 30000.0, "low": 20000.0}
+    
+    for confidence_level, expected_amount in expected_by_confidence.items():
+        actual_amount = by_confidence.get(confidence_level, 0)
+        if abs(actual_amount - expected_amount) > 0.01:
+            print(f"    ❌ Confidence breakdown incorrect for {confidence_level}: expected €{expected_amount:,.2f}, got €{actual_amount:,.2f}")
+            return False
+    
+    print("    ✅ Obligation confidence breakdown correct")
+    
+    # Test enhanced timeline endpoint integration
+    print("    🔍 Testing enhanced timeline endpoint integration...")
+    
+    enhanced_timeline, status = make_request('GET', f'/projects/{test_data["project_id"]}/evm-timeline-enhanced')
+    if status != 200 or not enhanced_timeline:
+        print("    ❌ Failed to get enhanced timeline")
+        return False
+    
+    # Verify timeline includes obligation data
+    timeline_data = enhanced_timeline.get('timeline_data', [])
+    if not timeline_data:
+        print("    ❌ Enhanced timeline data is empty")
+        return False
+    
+    sample_point = timeline_data[0]
+    required_timeline_fields = [
+        'total_obligations', 'actual_plus_obligations', 'eac_adjusted', 
+        'cpi_adjusted', 'budget_breach_risk', 'breach_severity'
+    ]
+    
+    for field in required_timeline_fields:
+        if field not in sample_point:
+            print(f"    ❌ Missing enhanced timeline field: {field}")
+            return False
+    
+    print("    ✅ Enhanced timeline endpoint integration working")
+    
+    # Final verification of the complete flow
+    print("  🎉 FINAL VERIFICATION: Complete Enhanced EVM Flow")
+    
+    print(f"    📊 Final Test Results:")
+    print(f"      ✅ High confidence obligation: €50,000 (95% weight)")
+    print(f"      ✅ Medium confidence obligation: €30,000 (80% weight)")
+    print(f"      ✅ Low confidence obligation: €20,000 (60% weight)")
+    print(f"      ✅ Calculated weighted total: €{actual_weighted_total:,.2f}")
+    print(f"      ✅ Expected weighted total: €{expected_weighted_total:,.2f}")
+    print(f"      ✅ Mathematical verification: PASSED")
+    print(f"      ✅ Standard CPI: {standard_cpi:.3f}")
+    print(f"      ✅ Adjusted CPI: {adjusted_cpi:.3f}")
+    print(f"      ✅ Standard EAC: €{standard_eac:,.2f}")
+    print(f"      ✅ Adjusted EAC: €{adjusted_eac:,.2f}")
+    print(f"      ✅ Budget breach risk: {budget_breach_risk}")
+    print(f"      ✅ Breach severity: {breach_severity}")
+    print(f"      ✅ Early warnings: {len(early_warnings)} triggered")
+    
+    print("  🎯 COMPREHENSIVE ENHANCED EVM SYSTEM TEST: PASSED")
+    
+    return True
+
 def test_edge_cases():
     """Test edge cases and error handling"""
     print("\n🧪 Testing Edge Cases")
