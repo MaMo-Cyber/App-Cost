@@ -157,6 +157,8 @@ class ProjectSummary(BaseModel):
     status_indicator: str
     # EVM metrics
     evm_metrics: Optional[Dict[str, Any]] = {}
+    # Obligation summary
+    obligation_summary: Optional[Dict[str, Any]] = {}
 
 # Enhanced Obligation/Commitment Model with Confidence and Status
 class Obligation(BaseModel):
