@@ -897,6 +897,193 @@ async def update_project_cost_estimates(project_id: str, cost_estimates: Dict[st
     
     return {"message": "Cost estimates updated successfully", "estimated_total": estimated_total}
 
+@api_router.post("/create-ongoing-demo-project")
+async def create_ongoing_demo_project():
+    """Create an ongoing demo project (50% complete) with realistic EVM progression for future analysis"""
+    
+    # Current date for realistic timeline
+    today = date.today()
+    project_start = today - timedelta(days=180)  # Started 6 months ago
+    project_end = today + timedelta(days=180)    # Ends in 6 months (50% complete)
+    
+    # Demo project data - Ongoing Industrial Project
+    project_data = {
+        "id": str(uuid.uuid4()),
+        "name": "Smart Manufacturing Integration Project",
+        "description": "Ongoing integration of IoT sensors, AI analytics, and automated control systems across manufacturing lines",
+        "total_budget": 1200000.0,  # €1.2M project
+        "start_date": project_start.isoformat(),
+        "end_date": project_end.isoformat(),
+        "status": "active",
+        "created_at": datetime.utcnow().isoformat(),
+        "updated_at": datetime.utcnow().isoformat(),
+        
+        # Detailed cost estimates (BAC breakdown)
+        "cost_estimates": {
+            "Equipment + Installation": 180000.0,
+            "Installation + transport": 65000.0,
+            "Equipment": 145000.0,
+            "Steelwork": 85000.0,
+            "Piping + installation": 75000.0,
+            "Planning (INT)": 80000.0,
+            "Planning (EXT)": 45000.0,
+            "Project management": 72000.0,
+            "Process engineering": 95000.0,
+            "Automation engineering": 125000.0,
+            "Civil engineering": 58000.0,
+            "Qualification": 42000.0,
+            "Instrumentation": 88000.0,
+            "Installation (incl. cabling)": 78000.0,
+            "Automation": 112000.0,
+            "Hardware": 135000.0,
+            "Software": 68000.0,
+            "Civil": 48000.0,
+            "Support": 35000.0,
+            "Scaffolding": 28000.0,
+            "Site facilities": 38000.0,
+            "HVAC": 52000.0,
+            "Contingency (10%)": 109090.0  # 10% of total above
+        },
+        "estimated_total": 1200000.0
+    }
+    
+    # Insert demo project
+    await db.projects.insert_one(project_data)
+    
+    # Create demo phases - some completed, some ongoing, some future
+    phases_data = [
+        {
+            "id": str(uuid.uuid4()),
+            "project_id": project_data["id"],
+            "name": "Phase 1: Planning & Design",
+            "description": "System architecture, technical specifications, and detailed planning",
+            "start_date": project_start.isoformat(),
+            "end_date": (project_start + timedelta(days=60)).isoformat(),
+            "status": "completed",
+            "budget_allocation": 250000.0,
+            "completion_percentage": 100
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "project_id": project_data["id"],
+            "name": "Phase 2: Infrastructure & Setup",
+            "description": "Network infrastructure, hardware installation, and base systems",
+            "start_date": (project_start + timedelta(days=45)).isoformat(),
+            "end_date": (project_start + timedelta(days=150)).isoformat(),
+            "status": "active",
+            "budget_allocation": 400000.0,
+            "completion_percentage": 75
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "project_id": project_data["id"],
+            "name": "Phase 3: Software Integration",
+            "description": "AI analytics, control software, and system integration",
+            "start_date": (project_start + timedelta(days=120)).isoformat(),
+            "end_date": (today + timedelta(days=90)).isoformat(),
+            "status": "active",
+            "budget_allocation": 350000.0,
+            "completion_percentage": 25
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "project_id": project_data["id"],
+            "name": "Phase 4: Testing & Optimization",
+            "description": "System testing, performance optimization, and quality assurance",
+            "start_date": (today + timedelta(days=30)).isoformat(),
+            "end_date": (today + timedelta(days=150)).isoformat(),
+            "status": "planning",
+            "budget_allocation": 150000.0,
+            "completion_percentage": 0
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "project_id": project_data["id"],
+            "name": "Phase 5: Deployment & Handover",
+            "description": "Final deployment, user training, and project handover",
+            "start_date": (today + timedelta(days=120)).isoformat(),
+            "end_date": project_end.isoformat(),
+            "status": "planning",
+            "budget_allocation": 50000.0,
+            "completion_percentage": 0
+        }
+    ]
+    
+    for phase in phases_data:
+        await db.phases.insert_one(phase)
+    
+    # Create realistic cost entries showing progressive spending (project 50% complete, some overruns)
+    cost_entries_data = [
+        # Phase 1: Planning & Design (COMPLETED - slight overrun)
+        {"category": "Planning (INT)", "amount": 28000, "date": (project_start + timedelta(days=10)).isoformat(), "status": "paid"},
+        {"category": "Planning (EXT)", "amount": 18000, "date": (project_start + timedelta(days=15)).isoformat(), "status": "paid"},
+        {"category": "Project management", "amount": 15000, "date": (project_start + timedelta(days=20)).isoformat(), "status": "paid"},
+        {"category": "Process engineering", "amount": 32000, "date": (project_start + timedelta(days=25)).isoformat(), "status": "paid"},
+        {"category": "Planning (INT)", "amount": 35000, "date": (project_start + timedelta(days=35)).isoformat(), "status": "paid"},  # Over estimate
+        {"category": "Planning (EXT)", "amount": 32000, "date": (project_start + timedelta(days=45)).isoformat(), "status": "paid"},  # Over estimate
+        {"category": "Software", "amount": 25000, "date": (project_start + timedelta(days=50)).isoformat(), "status": "paid"},
+        {"category": "Automation engineering", "amount": 42000, "date": (project_start + timedelta(days=55)).isoformat(), "status": "paid"},
+        
+        # Phase 2: Infrastructure & Setup (75% COMPLETE - significant overruns starting)
+        {"category": "Equipment", "amount": 95000, "date": (project_start + timedelta(days=70)).isoformat(), "status": "paid"},
+        {"category": "Hardware", "amount": 88000, "date": (project_start + timedelta(days=80)).isoformat(), "status": "paid"},
+        {"category": "Equipment + Installation", "amount": 125000, "date": (project_start + timedelta(days=90)).isoformat(), "status": "paid"},  # Over estimate
+        {"category": "Instrumentation", "amount": 72000, "date": (project_start + timedelta(days=100)).isoformat(), "status": "paid"},
+        {"category": "Hardware", "amount": 85000, "date": (project_start + timedelta(days=110)).isoformat(), "status": "outstanding"},  # Over estimate, outstanding
+        {"category": "Installation + transport", "amount": 48000, "date": (project_start + timedelta(days=120)).isoformat(), "status": "outstanding"},
+        {"category": "Steelwork", "amount": 92000, "date": (project_start + timedelta(days=130)).isoformat(), "status": "outstanding"},  # Over estimate
+        {"category": "Civil engineering", "amount": 45000, "date": (project_start + timedelta(days=140)).isoformat(), "status": "outstanding"},
+        
+        # Phase 3: Software Integration (25% COMPLETE - ongoing with some early costs)
+        {"category": "Automation", "amount": 65000, "date": (project_start + timedelta(days=155)).isoformat(), "status": "outstanding"},
+        {"category": "Software", "amount": 38000, "date": (project_start + timedelta(days=165)).isoformat(), "status": "outstanding"},
+        {"category": "Automation engineering", "amount": 55000, "date": (project_start + timedelta(days=170)).isoformat(), "status": "outstanding"},
+        
+        # Recent costs (last 2 weeks)
+        {"category": "Project management", "amount": 18000, "date": (today - timedelta(days=10)).isoformat(), "status": "paid"},
+        {"category": "Support", "amount": 22000, "date": (today - timedelta(days=5)).isoformat(), "status": "outstanding"},
+    ]
+    
+    # Insert cost entries with proper phase distribution
+    for i, entry in enumerate(cost_entries_data):
+        entry_data = {
+            "id": str(uuid.uuid4()),
+            "project_id": project_data["id"],
+            "category_id": str(uuid.uuid4()),
+            "category_name": entry["category"],
+            "description": f"Work package: {entry['category']} - {['Planning phase', 'Infrastructure phase', 'Integration phase', 'Current work'][min(i//6, 3)]}",
+            "total_amount": entry["amount"],
+            "entry_date": entry["date"],
+            "status": entry["status"],
+            "due_date": (datetime.fromisoformat(entry["date"]).date() + timedelta(days=30)).isoformat() if entry["status"] == "outstanding" else None,
+            "created_at": datetime.utcnow().isoformat(),
+            "hours": None,
+            "hourly_rate": None,
+            "quantity": None,
+            "unit_price": None,
+            "phase_id": phases_data[min(i // 5, 4)]["id"]  # Distribute across phases
+        }
+        
+        await db.cost_entries.insert_one(entry_data)
+    
+    return {
+        "message": "Ongoing demo project created successfully!",
+        "project_id": project_data["id"],
+        "project_name": project_data["name"],
+        "total_budget": project_data["total_budget"],
+        "estimated_total": project_data["estimated_total"],
+        "project_status": "ongoing (50% complete)",
+        "cost_entries_created": len(cost_entries_data),
+        "phases_created": len(phases_data),
+        "completion_status": {
+            "phase_1": "Completed (some overruns)",
+            "phase_2": "75% complete (significant overruns)",
+            "phase_3": "25% complete (early stage)",
+            "phase_4": "Not started (future)",
+            "phase_5": "Not started (future)"
+        }
+    }
+
 @api_router.post("/create-demo-project")
 async def create_demo_project():
     """Create a comprehensive demo project with realistic EVM data"""
