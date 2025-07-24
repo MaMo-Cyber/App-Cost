@@ -35,6 +35,7 @@ const translations = {
     dashboard: "Dashboard",
     newProject: "New Project",
     createDemoProject: "Create Demo Project",
+    createOngoingDemoProject: "Create Ongoing Demo Project",
     actions: "Actions",
     cancel: "Cancel",
     save: "Save",
@@ -45,8 +46,27 @@ const translations = {
     create: "Create",
     update: "Update",
     loading: "Loading...",
+    backToDashboard: "Back to Dashboard",
     
-    // Project Management
+    // Menu Items & Actions
+    addCosts: "Add Costs",
+    paymentStatus: "Payment Status",
+    paymentTimeline: "Payment Timeline",
+    manageCategories: "Manage Categories",
+    managePhases: "Manage Phases",
+    editCostEstimates: "Edit Cost Estimates",
+    exportPdfReport: "Export PDF Report",
+    projectActions: "Project Actions",
+    management: "Management",
+    export: "Export",
+    
+    // Modal & Overlay Headers
+    costStatusManagement: "Cost Status Management",
+    paymentTimelineHeader: "Payment Timeline",
+    costBreakdownDetails: "Cost Details",
+    editCostEstimatesHeader: "Edit Cost Estimates",
+    
+    // Form Labels & Inputs
     projectName: "Project Name",
     projectDescription: "Description",
     totalBudget: "Total Budget",
@@ -57,6 +77,35 @@ const translations = {
     review: "Review",
     createProject: "Create Project",
     editProject: "Edit Project",
+    calculateContingency: "Calculate Contingency",
+    
+    // Status Messages & Buttons
+    markAsPaid: "Mark as Paid",
+    markPaid: "Mark Paid",
+    markOutstanding: "Mark Outstanding",
+    setDueDate: "Set due date",
+    
+    // Timeline Categories
+    overduePayments: "OVERDUE PAYMENTS",
+    dueThisWeek: "DUE THIS WEEK",
+    dueThisMonth: "DUE THIS MONTH",
+    futureUnscheduled: "FUTURE & UNSCHEDULED",
+    allPaymentsUpToDate: "All Payments Up to Date!",
+    noOutstandingPayments: "No outstanding payments to track.",
+    
+    // Cost Entry Form
+    costCategory: "Cost Category",
+    hours: "Hours",
+    hourlyRate: "Hourly Rate",
+    quantity: "Quantity",
+    unitPrice: "Unit Price",
+    totalAmount: "Total Amount",
+    description: "Description",
+    
+    // Phase Management
+    phaseName: "Phase Name",
+    budgetAllocation: "Budget Allocation",
+    phaseDescription: "Phase Description",
     
     // EVM & Financial Terms
     earnedValueManagement: "Earned Value Management (EVM)",
@@ -85,6 +134,15 @@ const translations = {
     available: "Available",
     onTrack: "On Track",
     warning: "Warning",
+    totalSpent: "Total Spent",
+    totalBudget: "Total Budget",
+    budgetUtilization: "Budget Utilization",
+    entries: "entries",
+    
+    // Summary Labels
+    costBreakdown: "Cost Breakdown",
+    recentEntries: "Recent Entries",
+    projectSummary: "Project Summary",
     
     // Cost Categories
     equipmentInstallation: "Equipment + Installation",
@@ -148,6 +206,7 @@ const translations = {
     dashboard: "Dashboard",
     newProject: "Neues Projekt",
     createDemoProject: "Demo-Projekt erstellen",
+    createOngoingDemoProject: "Laufendes Demo-Projekt erstellen",
     actions: "Aktionen",
     cancel: "Abbrechen",
     save: "Speichern",
@@ -158,8 +217,27 @@ const translations = {
     create: "Erstellen",
     update: "Aktualisieren",
     loading: "Lädt...",
+    backToDashboard: "Zurück zum Dashboard",
     
-    // Project Management
+    // Menu Items & Actions
+    addCosts: "Kosten hinzufügen",
+    paymentStatus: "Zahlungsstatus",
+    paymentTimeline: "Zahlungszeitplan",
+    manageCategories: "Kategorien verwalten",
+    managePhases: "Phasen verwalten",
+    editCostEstimates: "Kostenschätzungen bearbeiten",
+    exportPdfReport: "PDF-Bericht exportieren",
+    projectActions: "Projektaktionen",
+    management: "Verwaltung",
+    export: "Export",
+    
+    // Modal & Overlay Headers
+    costStatusManagement: "Kostenstatus-Verwaltung",
+    paymentTimelineHeader: "Zahlungszeitplan",
+    costBreakdownDetails: "Kostendetails",
+    editCostEstimatesHeader: "Kostenschätzungen bearbeiten",
+    
+    // Form Labels & Inputs
     projectName: "Projektname",
     projectDescription: "Beschreibung",
     totalBudget: "Gesamtbudget",
@@ -170,6 +248,35 @@ const translations = {
     review: "Überprüfung",
     createProject: "Projekt erstellen",
     editProject: "Projekt bearbeiten",
+    calculateContingency: "Contingency berechnen",
+    
+    // Status Messages & Buttons
+    markAsPaid: "Als bezahlt markieren",
+    markPaid: "Bezahlt markieren",
+    markOutstanding: "Als ausstehend markieren",
+    setDueDate: "Fälligkeitsdatum setzen",
+    
+    // Timeline Categories
+    overduePayments: "ÜBERFÄLLIGE ZAHLUNGEN",
+    dueThisWeek: "FÄLLIG DIESE WOCHE",
+    dueThisMonth: "FÄLLIG DIESEN MONAT",
+    futureUnscheduled: "ZUKÜNFTIG & UNGEPLANT",
+    allPaymentsUpToDate: "Alle Zahlungen sind aktuell!",
+    noOutstandingPayments: "Keine ausstehenden Zahlungen zu verfolgen.",
+    
+    // Cost Entry Form
+    costCategory: "Kostenkategorie",
+    hours: "Stunden",
+    hourlyRate: "Stundensatz",
+    quantity: "Menge",
+    unitPrice: "Einzelpreis",
+    totalAmount: "Gesamtbetrag",
+    description: "Beschreibung",
+    
+    // Phase Management
+    phaseName: "Phasenname",
+    budgetAllocation: "Budgetzuteilung",
+    phaseDescription: "Phasenbeschreibung",
     
     // EVM & Financial Terms
     earnedValueManagement: "Earned Value Management (EVM)",
@@ -198,6 +305,15 @@ const translations = {
     available: "Verfügbar",
     onTrack: "Im Zeitplan",
     warning: "Warnung",
+    totalSpent: "Gesamt ausgegeben",
+    totalBudget: "Gesamtbudget",
+    budgetUtilization: "Budgetnutzung",
+    entries: "Einträge",
+    
+    // Summary Labels
+    costBreakdown: "Kostenaufschlüsselung",
+    recentEntries: "Neueste Einträge",
+    projectSummary: "Projektzusammenfassung",
     
     // Cost Categories
     equipmentInstallation: "Ausrüstung + Installation",
