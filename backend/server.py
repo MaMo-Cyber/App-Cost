@@ -540,7 +540,7 @@ async def get_enhanced_evm_timeline(project_id: str):
     current_evm = calculate_enhanced_evm_metrics(
         project=project_obj,
         total_spent=total_actual,
-        total_obligations=total_obligations,
+        obligations_data=obligations,
         include_obligations=True
     )
     
