@@ -1821,7 +1821,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
 
           {/* Budget Analysis */}
           <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">💰 Budget Analysis</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">💰 {t('budgetAnalysis')}</h3>
             <div className="h-64">
               <Bar data={budgetComparisonData} options={chartOptions} />
             </div>
