@@ -844,7 +844,7 @@ async def get_project_obligations_summary(project_id: str):
     """Get summary of obligations by category"""
     obligations = await db.obligations.find({
         "project_id": project_id, 
-        "status": "committed"
+        "status": "active"
     }).to_list(1000)
     
     total_obligations = sum(obj.get("amount", 0) for obj in obligations)
