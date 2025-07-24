@@ -884,6 +884,13 @@ async def get_project_summary(project_id: str):
     cost_entries = await db.cost_entries.find({"project_id": project_id}).to_list(1000)
     total_spent = sum(entry.get("total_amount", 0) for entry in cost_entries)
     
+    # Get obligations
+    obligations = await db.obligations.find({
+        "project_id": project_id, 
+        "status": "committed"
+    }).to_list(1000)
+    total_obligations = sum(obj.get("amount", 0) for obj in obligations)
+    
     # Calculate outstanding vs paid
     outstanding_entries = [entry for entry in cost_entries if entry.get("status") == "outstanding"]
     paid_entries = [entry for entry in cost_entries if entry.get("status") == "paid"]
@@ -949,9 +956,14 @@ async def get_project_summary(project_id: str):
     else:
         status_indicator = "over_budget"
     
-    # Calculate EVM metrics
+    # Calculate Enhanced EVM metrics
     project_obj = Project(**project)
-    evm_metrics = calculate_evm_metrics(project_obj, total_spent)
+    evm_metrics = calculate_enhanced_evm_metrics(
+        project=project_obj, 
+        total_spent=total_spent,
+        total_obligations=total_obligations,
+        include_obligations=True
+    )
     
     return ProjectSummary(
         project=Project(**project),
