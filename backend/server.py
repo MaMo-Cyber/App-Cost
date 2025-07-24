@@ -720,7 +720,7 @@ async def update_cost_category(category_id: str, category_update: CostCategoryCr
     updated_category = await db.cost_categories.find_one({"id": category_id})
     return CostCategory(**updated_category)
 
-# Obligation/Commitment routes
+# Enhanced Obligation/Commitment routes
 @api_router.post("/obligations", response_model=Obligation)
 async def create_obligation(obligation: ObligationCreate):
     try:
@@ -729,11 +729,22 @@ async def create_obligation(obligation: ObligationCreate):
         if not category:
             raise HTTPException(status_code=404, detail="Cost category not found")
         
+        # Set confidence percentage based on level
+        confidence_percentages = {
+            "high": 95.0,
+            "medium": 80.0,
+            "low": 60.0
+        }
+        
         obligation_dict = obligation.dict()
         obligation_dict["id"] = str(uuid.uuid4())
         obligation_dict["category_name"] = category["name"]
-        obligation_dict["status"] = "committed"
+        obligation_dict["status"] = "active"
+        obligation_dict["confidence_percentage"] = confidence_percentages.get(
+            obligation.confidence_level, 80.0
+        )
         obligation_dict["created_at"] = datetime.utcnow().isoformat()
+        obligation_dict["updated_at"] = datetime.utcnow().isoformat()
         
         # Handle dates
         if obligation_dict.get("expected_incur_date"):
@@ -752,6 +763,8 @@ async def create_obligation(obligation: ObligationCreate):
             return_data["expected_incur_date"] = datetime.fromisoformat(return_data["expected_incur_date"]).date()
         if return_data.get("created_at"):
             return_data["created_at"] = datetime.fromisoformat(return_data["created_at"])
+        if return_data.get("updated_at"):
+            return_data["updated_at"] = datetime.fromisoformat(return_data["updated_at"])
         
         return Obligation(**return_data)
         
@@ -760,19 +773,56 @@ async def create_obligation(obligation: ObligationCreate):
         raise HTTPException(status_code=500, detail=f"Error creating obligation: {str(e)}")
 
 @api_router.get("/projects/{project_id}/obligations", response_model=List[Obligation])
-async def get_project_obligations(project_id: str):
-    obligations = await db.obligations.find({"project_id": project_id, "status": "committed"}).to_list(1000)
+async def get_project_obligations(project_id: str, status: str = "active"):
+    obligations = await db.obligations.find({"project_id": project_id, "status": status}).to_list(1000)
     return [Obligation(**obligation) for obligation in obligations]
+
+@api_router.put("/obligations/{obligation_id}")
+async def update_obligation(obligation_id: str, update_data: ObligationUpdate):
+    update_dict = {k: v for k, v in update_data.dict().items() if v is not None}
+    
+    # Update confidence percentage if confidence level is changed
+    if "confidence_level" in update_dict:
+        confidence_percentages = {
+            "high": 95.0,
+            "medium": 80.0,
+            "low": 60.0
+        }
+        update_dict["confidence_percentage"] = confidence_percentages.get(
+            update_dict["confidence_level"], 80.0
+        )
+    
+    update_dict["updated_at"] = datetime.utcnow().isoformat()
+    
+    # Handle date conversion
+    if "expected_incur_date" in update_dict and update_dict["expected_incur_date"]:
+        if hasattr(update_dict["expected_incur_date"], 'isoformat'):
+            update_dict["expected_incur_date"] = update_dict["expected_incur_date"].isoformat()
+    
+    result = await db.obligations.update_one(
+        {"id": obligation_id}, 
+        {"$set": update_dict}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Obligation not found")
+    
+    return {"message": "Obligation updated successfully"}
 
 @api_router.put("/obligations/{obligation_id}/status")
 async def update_obligation_status(obligation_id: str, status_data: dict):
     status = status_data.get("status")
-    if status not in ["committed", "cancelled", "converted_to_actual"]:
+    if status not in ["active", "cancelled", "converted_to_actual"]:
         raise HTTPException(status_code=400, detail="Invalid status")
+    
+    update_data = {
+        "status": status,
+        "updated_at": datetime.utcnow().isoformat()
+    }
     
     result = await db.obligations.update_one(
         {"id": obligation_id}, 
-        {"$set": {"status": status}}
+        {"$set": update_data}
     )
     
     if result.matched_count == 0:
