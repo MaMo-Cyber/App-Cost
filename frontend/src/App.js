@@ -1034,8 +1034,8 @@ const PaymentTimeline = ({ project, onBack }) => {
           {summary.total_outstanding === 0 && (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🎉</div>
-              <h3 className="text-xl font-bold text-green-600 mb-2">All Payments Up to Date!</h3>
-              <p className="text-gray-600">No outstanding payments to track.</p>
+              <h3 className="text-xl font-bold text-green-600 mb-2">{t('allPaymentsUpToDate')}</h3>
+              <p className="text-gray-600">{t('noOutstandingPayments')}</p>
             </div>
           )}
         </div>
