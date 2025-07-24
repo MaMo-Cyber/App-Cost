@@ -1092,7 +1092,7 @@ const CostStatusManager = ({ project, onBack }) => {
         <div className="bg-white rounded-lg shadow-sm border p-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Cost Status Management</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('costStatusManagement')}</h2>
               <p className="text-gray-600">Track outstanding and paid costs for {project.name}</p>
             </div>
             <button
