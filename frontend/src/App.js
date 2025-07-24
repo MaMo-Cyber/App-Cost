@@ -1832,7 +1832,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Cost Breakdown Pie Chart */}
             <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">🎯 Cost Breakdown by Category</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">🎯 {t('costBreakdownByCategory')}</h3>
               <div className="h-80">
                 <Doughnut data={costBreakdownData} options={doughnutOptions} />
               </div>
