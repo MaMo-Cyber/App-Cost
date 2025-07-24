@@ -1725,116 +1725,231 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
             categoryName={selectedCategory}
           />
 
-        {/* EVM Metrics Section */}
+        {/* Comprehensive EVM Analysis & Explanations */}
         {summary.evm_metrics && (
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('earnedValueManagement')}</h3>
+          <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">📊 {t('earnedValueManagement')} - Detailed Analysis</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white p-4 rounded-lg shadow-sm border">
-                <div className="text-center">
-                  <div className="mx-auto p-2 bg-blue-100 rounded-lg w-fit mb-2">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                  </div>
-                  <p className="text-xs font-medium text-gray-600">{t('plannedValue')}</p>
-                  <p className="text-lg font-semibold text-gray-900">€{summary.evm_metrics.planned_value.toLocaleString()}</p>
+            {/* EVM Fundamentals Explanation */}
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="font-semibold text-blue-900 mb-3">🎯 EVM Key Concepts</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="bg-white p-3 rounded border-l-4 border-blue-500">
+                  <p className="font-medium text-blue-800">{t('plannedValue')} (PV)</p>
+                  <p className="text-blue-700">Budget for work scheduled to be completed by a specific date</p>
+                  <p className="text-xs text-blue-600 mt-1">Formula: Cumulative planned cost up to time t</p>
                 </div>
-              </div>
-
-              <div className="bg-white p-4 rounded-lg shadow-sm border border-yellow-200 bg-yellow-50">
-                <div className="text-center">
-                  <div className="mx-auto p-2 bg-yellow-100 rounded-lg w-fit mb-2">
-                    <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                    </svg>
-                  </div>
-                  <p className="text-xs font-medium text-yellow-700">{t('earnedValue')}</p>
-                  <p className="text-lg font-semibold text-yellow-800">€{summary.evm_metrics.earned_value.toLocaleString()}</p>
+                <div className="bg-white p-3 rounded border-l-4 border-green-500">
+                  <p className="font-medium text-green-800">{t('earnedValue')} (EV)</p>
+                  <p className="text-green-700">Budget for work actually completed by a specific date</p>
+                  <p className="text-xs text-green-600 mt-1">Formula: % Complete × Total Budget (BAC)</p>
                 </div>
-              </div>
-
-              <div className="bg-white p-4 rounded-lg shadow-sm border border-red-200 bg-red-50">
-                <div className="text-center">
-                  <div className="mx-auto p-2 bg-red-100 rounded-lg w-fit mb-2">
-                    <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                    </svg>
-                  </div>
-                  <p className="text-xs font-medium text-red-700">{t('actualCost')}</p>
-                  <p className="text-lg font-semibold text-red-800">€{summary.evm_metrics.actual_cost.toLocaleString()}</p>
-                </div>
-              </div>
-
-              <div className="bg-white p-4 rounded-lg shadow-sm border border-purple-200 bg-purple-50">
-                <div className="text-center">
-                  <div className="mx-auto p-2 bg-purple-100 rounded-lg w-fit mb-2">
-                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                  </div>
-                  <p className="text-xs font-medium text-purple-700">{t('eacForecast')}</p>
-                  <p className="text-lg font-semibold text-purple-800">€{summary.evm_metrics.estimate_at_completion.toLocaleString()}</p>
+                <div className="bg-white p-3 rounded border-l-4 border-red-500">
+                  <p className="font-medium text-red-800">{t('actualCost')} (AC)</p>
+                  <p className="text-red-700">Actual cost incurred for work completed by a specific date</p>
+                  <p className="text-xs text-red-600 mt-1">Formula: Sum of all actual expenditures</p>
                 </div>
               </div>
             </div>
 
-            {/* Performance Indicators */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {/* Current Performance Analysis */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="bg-white p-4 rounded-lg shadow-sm border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">{t('costPerformanceIndex')}</p>
-                    <p className="text-2xl font-bold text-gray-900">{summary.evm_metrics.cost_performance_index.toFixed(3)}</p>
-                    <p className={`text-sm ${summary.evm_metrics.cost_performance_index >= 1 ? 'text-green-600' : 'text-red-600'}`}>
-                      {summary.evm_metrics.cost_performance_index >= 1 ? t('underBudget') : t('overBudget')}
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between mb-3">
+                  <h5 className="font-semibold text-gray-800">Cost Performance</h5>
                   <div className={`p-2 rounded-lg ${summary.evm_metrics.cost_performance_index >= 1 ? 'bg-green-100' : 'bg-red-100'}`}>
-                    <svg className={`w-8 h-8 ${summary.evm_metrics.cost_performance_index >= 1 ? 'text-green-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={summary.evm_metrics.cost_performance_index >= 1 ? "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" : "M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"}></path>
+                    <svg className={`w-6 h-6 ${summary.evm_metrics.cost_performance_index >= 1 ? 'text-green-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                     </svg>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">CPI:</span>
+                    <span className={`font-bold ${summary.evm_metrics.cost_performance_index >= 1 ? 'text-green-600' : 'text-red-600'}`}>
+                      {summary.evm_metrics.cost_performance_index.toFixed(3)}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {summary.evm_metrics.cost_performance_index >= 1 
+                      ? `✅ Getting €${summary.evm_metrics.cost_performance_index.toFixed(2)} of value for every €1 spent`
+                      : `⚠️ Getting €${summary.evm_metrics.cost_performance_index.toFixed(2)} of value for every €1 spent`
+                    }
+                  </div>
+                  <div className="text-xs font-medium">
+                    Interpretation: {summary.evm_metrics.cost_performance_index >= 1.05 ? 'Excellent cost efficiency' :
+                                  summary.evm_metrics.cost_performance_index >= 0.95 ? 'Good cost control' :
+                                  summary.evm_metrics.cost_performance_index >= 0.85 ? 'Cost concerns - monitor closely' :
+                                  'Serious cost overruns - immediate action required'}
                   </div>
                 </div>
               </div>
 
               <div className="bg-white p-4 rounded-lg shadow-sm border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">{t('schedulePerformanceIndex')}</p>
-                    <p className="text-2xl font-bold text-gray-900">{summary.evm_metrics.schedule_performance_index.toFixed(3)}</p>
-                    <p className={`text-sm ${summary.evm_metrics.schedule_performance_index >= 1 ? 'text-green-600' : 'text-red-600'}`}>
-                      {summary.evm_metrics.schedule_performance_index >= 1 ? t('ahead') : t('behind')}
-                    </p>
-                  </div>
-                  <div className={`p-2 rounded-lg ${summary.evm_metrics.schedule_performance_index >= 1 ? 'bg-green-100' : 'bg-red-100'}`}>
-                    <svg className={`w-8 h-8 ${summary.evm_metrics.schedule_performance_index >= 1 ? 'text-green-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center justify-between mb-3">
+                  <h5 className="font-semibold text-gray-800">Schedule Performance</h5>
+                  <div className={`p-2 rounded-lg ${summary.evm_metrics.schedule_performance_index >= 1 ? 'bg-green-100' : 'bg-yellow-100'}`}>
+                    <svg className={`w-6 h-6 ${summary.evm_metrics.schedule_performance_index >= 1 ? 'text-green-600' : 'text-yellow-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                   </div>
                 </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">SPI:</span>
+                    <span className={`font-bold ${summary.evm_metrics.schedule_performance_index >= 1 ? 'text-green-600' : 'text-yellow-600'}`}>
+                      {summary.evm_metrics.schedule_performance_index.toFixed(3)}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Schedule variance: €{summary.evm_metrics.schedule_variance.toLocaleString()}
+                  </div>
+                  <div className="text-xs font-medium">
+                    Status: {summary.evm_metrics.schedule_performance_index >= 1.05 ? 'Ahead of schedule' :
+                            summary.evm_metrics.schedule_performance_index >= 0.95 ? 'On schedule' :
+                            summary.evm_metrics.schedule_performance_index >= 0.85 ? 'Slightly behind schedule' :
+                            'Significantly behind schedule'}
+                  </div>
+                </div>
               </div>
 
               <div className="bg-white p-4 rounded-lg shadow-sm border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">{t('varianceAtCompletion')}</p>
-                    <p className={`text-2xl font-bold ${summary.evm_metrics.variance_at_completion >= 0 ? 'text-green-900' : 'text-red-900'}`}>
-                      €{summary.evm_metrics.variance_at_completion.toLocaleString()}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {summary.evm_metrics.variance_at_completion >= 0 ? t('underBudget') : t('overBudget')}
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between mb-3">
+                  <h5 className="font-semibold text-gray-800">Cost Forecast</h5>
                   <div className={`p-2 rounded-lg ${summary.evm_metrics.variance_at_completion >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
-                    <svg className={`w-8 h-8 ${summary.evm_metrics.variance_at_completion >= 0 ? 'text-green-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                    <svg className={`w-6 h-6 ${summary.evm_metrics.variance_at_completion >= 0 ? 'text-green-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">EAC:</span>
+                    <span className="font-bold text-purple-600">
+                      €{summary.evm_metrics.estimate_at_completion.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">VAC:</span>
+                    <span className={`font-bold ${summary.evm_metrics.variance_at_completion >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      €{summary.evm_metrics.variance_at_completion.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="text-xs font-medium">
+                    Projection: {summary.evm_metrics.variance_at_completion >= 0 ? 'Under budget' : 'Over budget'} by{' '}
+                    {Math.abs((summary.evm_metrics.variance_at_completion / project.total_budget) * 100).toFixed(1)}%
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Formula Explanations */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <h4 className="font-semibold text-gray-900 mb-3">📐 EVM Formulas & Calculations</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="space-y-2">
+                  <div className="bg-white p-3 rounded border">
+                    <p className="font-medium text-gray-800">Cost Performance Index (CPI)</p>
+                    <p className="text-gray-600 font-mono">CPI = EV ÷ AC</p>
+                    <p className="text-xs text-gray-500">
+                      Current: €{summary.evm_metrics.earned_value.toLocaleString()} ÷ €{summary.evm_metrics.actual_cost.toLocaleString()} = {summary.evm_metrics.cost_performance_index.toFixed(3)}
+                    </p>
+                  </div>
+                  <div className="bg-white p-3 rounded border">
+                    <p className="font-medium text-gray-800">Schedule Performance Index (SPI)</p>
+                    <p className="text-gray-600 font-mono">SPI = EV ÷ PV</p>
+                    <p className="text-xs text-gray-500">
+                      Current: €{summary.evm_metrics.earned_value.toLocaleString()} ÷ €{summary.evm_metrics.planned_value.toLocaleString()} = {summary.evm_metrics.schedule_performance_index.toFixed(3)}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="bg-white p-3 rounded border">
+                    <p className="font-medium text-gray-800">Estimate at Completion (EAC)</p>
+                    <p className="text-gray-600 font-mono">EAC = BAC ÷ CPI</p>
+                    <p className="text-xs text-gray-500">
+                      Current: €{project.total_budget.toLocaleString()} ÷ {summary.evm_metrics.cost_performance_index.toFixed(3)} = €{summary.evm_metrics.estimate_at_completion.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="bg-white p-3 rounded border">
+                    <p className="font-medium text-gray-800">Variance at Completion (VAC)</p>
+                    <p className="text-gray-600 font-mono">VAC = BAC - EAC</p>
+                    <p className="text-xs text-gray-500">
+                      Current: €{project.total_budget.toLocaleString()} - €{summary.evm_metrics.estimate_at_completion.toLocaleString()} = €{summary.evm_metrics.variance_at_completion.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Future Phase Analysis */}
+            {dashboardData.evm_timeline?.completion_prediction?.months_remaining > 0 && (
+              <div className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <h4 className="font-semibold text-yellow-900 mb-3">🔮 Future Phase Analysis & Predictions</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white p-4 rounded border">
+                    <h5 className="font-medium text-gray-800 mb-2">Remaining Work Analysis</h5>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Work Completed:</span>
+                        <span className="font-medium">{dashboardData.evm_timeline.completion_prediction.current_progress_pct}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Work Remaining:</span>
+                        <span className="font-medium">{(100 - dashboardData.evm_timeline.completion_prediction.current_progress_pct).toFixed(1)}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Estimated Months Left:</span>
+                        <span className="font-medium">{dashboardData.evm_timeline.completion_prediction.months_remaining}</span>
+                      </div>
+                      <div className="flex justify-between border-t pt-2">
+                        <span>Remaining Budget:</span>
+                        <span className="font-medium">€{(project.total_budget - summary.total_spent).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white p-4 rounded border">
+                    <h5 className="font-medium text-gray-800 mb-2">Cost Trend Predictions</h5>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Current Cost Efficiency:</span>
+                        <span className={`font-medium ${
+                          dashboardData.evm_timeline.completion_prediction.cost_efficiency === 'good' ? 'text-green-600' :
+                          dashboardData.evm_timeline.completion_prediction.cost_efficiency === 'poor' ? 'text-red-600' : 'text-yellow-600'
+                        }`}>
+                          {dashboardData.evm_timeline.completion_prediction.cost_efficiency.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Projected Final Cost:</span>
+                        <span className="font-medium">€{dashboardData.evm_timeline.completion_prediction.projected_completion_cost.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Expected Overrun:</span>
+                        <span className={`font-medium ${
+                          dashboardData.evm_timeline.completion_prediction.projected_overrun_pct > 0 ? 'text-red-600' : 'text-green-600'
+                        }`}>
+                          {dashboardData.evm_timeline.completion_prediction.projected_overrun_pct > 0 ? '+' : ''}
+                          {dashboardData.evm_timeline.completion_prediction.projected_overrun_pct}%
+                        </span>
+                      </div>
+                      <div className="border-t pt-2">
+                        <p className="text-xs text-gray-600">
+                          💡 <strong>Recommendation:</strong>{' '}
+                          {dashboardData.evm_timeline.completion_prediction.cost_efficiency === 'poor' 
+                            ? 'Immediate cost control measures needed. Review upcoming phases for savings opportunities.'
+                            : dashboardData.evm_timeline.completion_prediction.projected_overrun_pct > 5
+                            ? 'Monitor costs closely and consider scope adjustments for remaining phases.'
+                            : 'Project on track. Continue current cost management practices.'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
