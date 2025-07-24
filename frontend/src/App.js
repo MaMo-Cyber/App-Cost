@@ -3610,6 +3610,7 @@ const CostEntry = ({ project, onBack }) => {
 
 // Phase Management Component (unchanged)
 const PhaseManagement = ({ project, onBack }) => {
+  const { t } = useLanguage();
   const [phases, setPhases] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
