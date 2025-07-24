@@ -1228,7 +1228,7 @@ const CostStatusManager = ({ project, onBack }) => {
                             onClick={() => updateCostStatus(cost.id, 'outstanding')}
                             className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
                           >
-                            Mark Outstanding ⚠️
+                            {t('markOutstanding')} ⚠️
                           </button>
                         </div>
                       </div>
