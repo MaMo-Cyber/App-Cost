@@ -1151,7 +1151,7 @@ async def create_demo_project():
             "description": "Equipment procurement and custom manufacturing",
             "start_date": "2024-02-01",
             "end_date": "2024-06-30",
-            "status": "active",
+            "status": "in_progress",
             "budget_allocation": 300000.0
         },
         {
