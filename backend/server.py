@@ -383,7 +383,142 @@ def calculate_evm_metrics(project: Project, total_spent: float, project_progress
         include_obligations=False
     )
 
-# Routes
+@api_router.get("/projects/{project_id}/evm-timeline-enhanced")
+async def get_enhanced_evm_timeline(project_id: str):
+    """Get enhanced EVM timeline data including obligations and forecasts"""
+    # Get project
+    project = await db.projects.find_one({"id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    project_obj = Project(**project)
+    
+    # Get cost entries and obligations
+    cost_entries = await db.cost_entries.find({"project_id": project_id}).to_list(1000)
+    obligations = await db.obligations.find({
+        "project_id": project_id, 
+        "status": "committed"
+    }).to_list(1000)
+    
+    # Generate timeline data points
+    start_date = project_obj.start_date
+    end_date = project_obj.end_date
+    today = date.today()
+    
+    timeline_data = []
+    monthly_data = []
+    
+    # Create monthly timeline from start to 6 months after end date
+    current_date = start_date.replace(day=1)  # Start of month
+    timeline_end = end_date + timedelta(days=180)  # Extended for forecasting
+    
+    while current_date <= timeline_end:
+        # Calculate cumulative actuals up to this date
+        cumulative_actual = 0
+        cumulative_obligations = 0
+        
+        for entry in cost_entries:
+            entry_date_str = entry.get("entry_date")
+            if isinstance(entry_date_str, str):
+                entry_date = datetime.fromisoformat(entry_date_str).date()
+            else:
+                entry_date = entry_date_str
+            
+            if entry_date <= current_date:
+                cumulative_actual += entry.get("total_amount", 0)
+        
+        # Add obligations that should be incurred by this date
+        for obligation in obligations:
+            expected_date = obligation.get("expected_incur_date")
+            if expected_date:
+                if isinstance(expected_date, str):
+                    expected_date = datetime.fromisoformat(expected_date).date()
+                if expected_date <= current_date:
+                    cumulative_obligations += obligation.get("amount", 0)
+            else:
+                # If no expected date, assume commitment date
+                commitment_date = obligation.get("commitment_date")
+                if isinstance(commitment_date, str):
+                    commitment_date = datetime.fromisoformat(commitment_date).date()
+                if commitment_date <= current_date:
+                    cumulative_obligations += obligation.get("amount", 0)
+        
+        # Calculate project progress up to this date
+        project_duration = (project_obj.end_date - project_obj.start_date).days
+        elapsed_days = (current_date - project_obj.start_date).days
+        progress = min(max(elapsed_days / project_duration, 0), 1) if project_duration > 0 else 0
+        
+        # Calculate EVM metrics for this point in time
+        evm = calculate_enhanced_evm_metrics(
+            project=project_obj,
+            total_spent=cumulative_actual,
+            total_obligations=cumulative_obligations,
+            project_progress=progress,
+            include_obligations=True
+        )
+        
+        data_point = {
+            "date": current_date.isoformat(),
+            "month_label": current_date.strftime("%b %Y"),
+            "planned_value": evm.planned_value,
+            "earned_value": evm.earned_value,
+            "actual_cost": evm.actual_cost,
+            "total_obligations": evm.total_obligations,
+            "actual_plus_obligations": evm.actual_cost + evm.total_obligations,
+            "eac_standard": evm.estimate_at_completion,
+            "eac_adjusted": evm.estimate_at_completion_adj,
+            "cpi_standard": evm.cost_performance_index,
+            "cpi_adjusted": evm.cost_performance_index_adj,
+            "spi": evm.schedule_performance_index,
+            "budget_breach_risk": evm.budget_breach_risk,
+            "breach_severity": evm.breach_severity,
+            "is_forecast": current_date > today
+        }
+        
+        timeline_data.append(data_point)
+        monthly_data.append(data_point)
+        
+        # Move to next month
+        if current_date.month == 12:
+            current_date = current_date.replace(year=current_date.year + 1, month=1)
+        else:
+            current_date = current_date.replace(month=current_date.month + 1)
+    
+    # Calculate current totals
+    total_actual = sum(entry.get("total_amount", 0) for entry in cost_entries)
+    total_obligations = sum(obj.get("amount", 0) for obj in obligations)
+    
+    # Get current EVM metrics
+    current_evm = calculate_enhanced_evm_metrics(
+        project=project_obj,
+        total_spent=total_actual,
+        total_obligations=total_obligations,
+        include_obligations=True
+    )
+    
+    return {
+        "timeline_data": timeline_data,
+        "monthly_data": monthly_data,
+        "current_metrics": {
+            "total_actual": total_actual,
+            "total_obligations": total_obligations,
+            "cpi_standard": current_evm.cost_performance_index,
+            "cpi_adjusted": current_evm.cost_performance_index_adj,
+            "spi": current_evm.schedule_performance_index,
+            "eac_standard": current_evm.estimate_at_completion,
+            "eac_adjusted": current_evm.estimate_at_completion_adj,
+            "budget_breach_risk": current_evm.budget_breach_risk,
+            "breach_severity": current_evm.breach_severity,
+            "cost_status": current_evm.cost_status,
+            "cost_status_adj": current_evm.cost_status_adj
+        },
+        "project_info": {
+            "name": project["name"],
+            "total_budget": project["total_budget"],
+            "start_date": project["start_date"],
+            "end_date": project["end_date"]
+        }
+    }
 @api_router.get("/")
 async def root():
     return {"message": "Project Cost Tracker API"}
