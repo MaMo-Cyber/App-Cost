@@ -1511,7 +1511,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
   };
 
   const budgetComparisonData = {
-    labels: ['Budget Allocated', 'Amount Spent', 'Remaining (Actual)'],
+    labels: [t('budgetAllocated'), t('amountSpent'), t('remainingActual')],
     datasets: [
       {
         label: t('budgetAnalysis'),
