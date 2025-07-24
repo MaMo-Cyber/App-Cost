@@ -327,6 +327,24 @@ const translations = {
     ahead: "Vor Plan",
     onSchedule: "Termingerecht",
     
+    // Enhanced EVM Terms
+    obligations: "Verpflichtungen",
+    committed: "Verpflichtet",
+    adjustedCPI: "Angepasster CPI",
+    adjustedEAC: "Angepasste EAC",
+    standardMetrics: "Standard-Metriken",
+    adjustedMetrics: "Angepasste Metriken (mit Verpflichtungen)",
+    includeObligations: "Verpflichtungen in Berechnungen einbeziehen",
+    obligationsTooltip: "Verpflichtete Kosten (Bestellungen, Verträge) noch nicht angefallen",
+    budgetBreachRisk: "Budgetüberschreitungsrisiko",
+    breachSeverity: "Überschreitungsschwere",
+    addObligation: "Verpflichtung hinzufügen",
+    manageObligations: "Verpflichtungen verwalten",
+    obligationAmount: "Verpflichtungsbetrag",
+    expectedIncurDate: "Erwartetes Anfallsdatum",
+    commitmentDate: "Verpflichtungsdatum",
+    obligationDescription: "Verpflichtungsbeschreibung",
+    
     // Status & Indicators
     outstanding: "Ausstehend",
     paid: "Bezahlt",
