@@ -811,7 +811,7 @@ const PaymentTimeline = ({ project, onBack }) => {
         <div className="bg-white rounded-lg shadow-sm border p-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Payment Timeline</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('paymentTimelineHeader')}</h2>
               <p className="text-gray-600">Outstanding payment schedule for {project.name}</p>
             </div>
             <button
