@@ -1813,7 +1813,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Monthly Spending Trend */}
           <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">📈 Monthly Spending Trend</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">📈 {t('monthlySpendingTrend')}</h3>
             <div className="h-64">
               <Line data={trendLineData} options={chartOptions} />
             </div>
