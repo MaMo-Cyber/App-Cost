@@ -185,6 +185,8 @@ const translations = {
     budgetAllocated: "Budget Allocated",
     amountSpent: "Amount Spent",
     remainingActual: "Remaining (Actual)",
+    monthlySpendingTrend: "Monthly Spending Trend",
+    costBreakdownByCategory: "Cost Breakdown by Category",
     
     // Time & Date
     currentDateTime: "Current Date & Time",
