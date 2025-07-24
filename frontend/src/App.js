@@ -676,48 +676,91 @@ const ProjectList = ({ onProjectSelected, onCreateNew }) => {
               <h2 className="text-2xl font-bold text-gray-900">{t('projects')}</h2>
               <p className="text-gray-600 mt-2">Select a project to manage or create a new one</p>
             </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={exportAllData}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                title="Export all data as backup"
-              >
-                📥 Export Backup
-              </button>
-              <label className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-medium cursor-pointer">
-                📤 Import Backup
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={importData}
-                  disabled={importing}
-                  className="hidden"
-                />
-              </label>
-              <button
-                onClick={createOngoingDemoProject}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center space-x-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span>{t('createOngoingDemoProject')}</span>
-              </button>
-              <button
-                onClick={createDemoProject}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
-                <span>{t('createDemoProject')}</span>
-              </button>
+            <div className="flex justify-center items-center space-x-4">
+              {/* Main New Project Button */}
               <button
                 onClick={onCreateNew}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg shadow-lg"
               >
-                {t('newProject')}
+                + {t('newProject')}
               </button>
+              
+              {/* Demo Projects Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowDemoMenu(!showDemoMenu)}
+                  className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors border border-gray-300 flex items-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  </svg>
+                  <span>Demo Projects</span>
+                  <svg className={`w-4 h-4 transition-transform ${showDemoMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </button>
+                
+                {showDemoMenu && (
+                  <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[280px]">
+                    <div className="py-1">
+                      <div className="px-4 py-2 text-xs font-medium text-gray-500 border-b">Create Sample Projects</div>
+                      
+                      <button
+                        onClick={() => {
+                          createOngoingDemoProject();
+                          setShowDemoMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 flex items-center space-x-3"
+                      >
+                        <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                          <div className="font-medium">{t('createOngoingDemoProject')}</div>
+                          <div className="text-xs text-gray-500">Smart Manufacturing (50% complete, €1.2M)</div>
+                        </div>
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          createDemoProject();
+                          setShowDemoMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 flex items-center space-x-3"
+                      >
+                        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        <div>
+                          <div className="font-medium">{t('createDemoProject')}</div>
+                          <div className="text-xs text-gray-500">Basic project with sample data</div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Utility Buttons */}
+              <div className="flex space-x-2">
+                <button
+                  onClick={exportAllData}
+                  className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                  title="Export all data as backup"
+                >
+                  📥
+                </button>
+                <label className="px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors cursor-pointer text-sm" title="Import backup data">
+                  📤
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={importData}
+                    disabled={importing}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             </div>
           </div>
 
