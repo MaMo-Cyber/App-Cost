@@ -3342,12 +3342,13 @@ const ProjectSetup = ({ onProjectCreated, onCancel }) => {
   );
 };
 
-// Obligation Management Component
+// Enhanced Obligation Management Component
 const ObligationManager = ({ project, onBack }) => {
   const [obligations, setObligations] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [activeTab, setActiveTab] = useState('active');
   const { t } = useLanguage();
   const API = process.env.REACT_APP_BACKEND_URL;
   
@@ -3355,17 +3356,21 @@ const ObligationManager = ({ project, onBack }) => {
     category_id: '',
     description: '',
     amount: '',
-    expected_incur_date: ''
+    expected_incur_date: '',
+    confidence_level: 'medium',
+    priority: 'normal',
+    contract_reference: '',
+    vendor_supplier: ''
   });
 
   useEffect(() => {
     fetchObligations();
     fetchCategories();
-  }, []);
+  }, [activeTab]);
 
   const fetchObligations = async () => {
     try {
-      const response = await axios.get(`${API}/projects/${project.id}/obligations`);
+      const response = await axios.get(`${API}/projects/${project.id}/obligations?status=${activeTab}`);
       setObligations(response.data);
     } catch (error) {
       console.error('Error fetching obligations:', error);
@@ -3396,7 +3401,11 @@ const ObligationManager = ({ project, onBack }) => {
         category_id: '',
         description: '',
         amount: '',
-        expected_incur_date: ''
+        expected_incur_date: '',
+        confidence_level: 'medium',
+        priority: 'normal',
+        contract_reference: '',
+        vendor_supplier: ''
       });
       setShowAddForm(false);
       fetchObligations();
@@ -3404,6 +3413,17 @@ const ObligationManager = ({ project, onBack }) => {
     } catch (error) {
       console.error('Error adding obligation:', error);
       alert('Error adding obligation');
+    }
+  };
+
+  const updateObligationStatus = async (obligationId, newStatus) => {
+    try {
+      await axios.put(`${API}/obligations/${obligationId}/status`, {status: newStatus});
+      fetchObligations();
+      alert(`Obligation marked as ${newStatus}!`);
+    } catch (error) {
+      console.error('Error updating obligation:', error);
+      alert('Error updating obligation');
     }
   };
 
@@ -3420,7 +3440,31 @@ const ObligationManager = ({ project, onBack }) => {
     }
   };
 
+  const getConfidenceColor = (level) => {
+    switch(level) {
+      case 'high': return 'bg-green-100 text-green-800 border-green-200';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getPriorityIcon = (priority) => {
+    switch(priority) {
+      case 'high': return '🔴';
+      case 'normal': return '🟡';
+      case 'low': return '🟢';
+      default: return '⚪';
+    }
+  };
+
+  const getWeightedAmount = (amount, confidence) => {
+    const weights = { high: 0.95, medium: 0.80, low: 0.60 };
+    return amount * (weights[confidence] || 0.80);
+  };
+
   const totalObligations = obligations.reduce((sum, obj) => sum + obj.amount, 0);
+  const weightedTotal = obligations.reduce((sum, obj) => sum + getWeightedAmount(obj.amount, obj.confidence_level), 0);
 
   if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
@@ -3431,7 +3475,7 @@ const ObligationManager = ({ project, onBack }) => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">{t('manageObligations')}</h2>
-              <p className="text-gray-600">Manage committed costs for {project.name}</p>
+              <p className="text-gray-600">Enhanced obligation management with confidence weighting for {project.name}</p>
             </div>
             <button
               onClick={onBack}
@@ -3441,26 +3485,53 @@ const ObligationManager = ({ project, onBack }) => {
             </button>
           </div>
 
-          {/* Summary */}
-          <div className="bg-blue-50 p-6 rounded-lg border border-blue-200 mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-blue-800 mb-2">{t('obligations')} Summary</h3>
-                <p className="text-3xl font-bold text-blue-600">€{totalObligations.toLocaleString()}</p>
-                <p className="text-sm text-blue-600">{obligations.length} {t('committed')} items</p>
-              </div>
-              <div className="text-right">
-                <button
-                  onClick={() => setShowAddForm(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  + {t('addObligation')}
-                </button>
+          {/* Enhanced Summary with Weighted Calculations */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+              <h3 className="text-lg font-semibold text-blue-800 mb-2">Total {t('obligations')}</h3>
+              <p className="text-3xl font-bold text-blue-600">€{totalObligations.toLocaleString()}</p>
+              <p className="text-sm text-blue-600">{obligations.length} active items</p>
+            </div>
+            
+            <div className="bg-purple-50 p-6 rounded-lg border border-purple-200">
+              <h3 className="text-lg font-semibold text-purple-800 mb-2">Weighted Total</h3>
+              <p className="text-3xl font-bold text-purple-600">€{weightedTotal.toLocaleString()}</p>
+              <p className="text-sm text-purple-600">Risk-adjusted amount</p>
+            </div>
+
+            <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-green-800 mb-2">Actions</h3>
+                  <button
+                    onClick={() => setShowAddForm(true)}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    + {t('addObligation')}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Add Form */}
+          {/* Status Tabs */}
+          <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+            {['active', 'cancelled', 'converted_to_actual'].map((status) => (
+              <button
+                key={status}
+                onClick={() => setActiveTab(status)}
+                className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                  activeTab === status
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+              </button>
+            ))}
+          </div>
+
+          {/* Enhanced Add Form */}
           {showAddForm && (
             <div className="bg-gray-50 p-6 rounded-lg border mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('addObligation')}</h3>
@@ -3515,13 +3586,50 @@ const ObligationManager = ({ project, onBack }) => {
                   />
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Confidence Level</label>
+                  <select
+                    value={formData.confidence_level}
+                    onChange={(e) => setFormData({...formData, confidence_level: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="high">High (95% - Signed contracts, confirmed POs)</option>
+                    <option value="medium">Medium (80% - Approved quotes, pending orders)</option>
+                    <option value="low">Low (60% - Planned items, soft commitments)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                  <select
+                    value={formData.priority}
+                    onChange={(e) => setFormData({...formData, priority: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="high">High Priority</option>
+                    <option value="normal">Normal Priority</option>
+                    <option value="low">Low Priority</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contract/PO Reference</label>
+                  <input
+                    type="text"
+                    value={formData.contract_reference}
+                    onChange={(e) => setFormData({...formData, contract_reference: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="PO-2024-156, Contract #ABC-123"
+                  />
+                </div>
+
                 <div className="flex items-end">
                   <div className="flex space-x-3">
                     <button
                       type="submit"
                       className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                     >
-                      {t('save')}
+                      {t('save')} Obligation
                     </button>
                     <button
                       type="button"
@@ -3536,40 +3644,77 @@ const ObligationManager = ({ project, onBack }) => {
             </div>
           )}
 
-          {/* Obligations List */}
+          {/* Enhanced Obligations List */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">{t('committed')} {t('obligations')}</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace('_', ' ')} {t('obligations')}</h3>
+              <div className="text-sm text-gray-500">
+                {obligations.length} items • €{totalObligations.toLocaleString()} total • €{weightedTotal.toLocaleString()} weighted
+              </div>
+            </div>
+            
             {obligations.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-500">No obligations found. Click "Add Obligation" to create one.</p>
+                <p className="text-gray-500">No {activeTab} obligations found. {activeTab === 'active' ? 'Click "Add Obligation" to create one.' : ''}</p>
               </div>
             ) : (
               obligations.map((obligation) => (
-                <div key={obligation.id} className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                <div key={obligation.id} className="border border-blue-200 rounded-lg p-4 bg-blue-50 hover:bg-blue-100 transition-colors">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
+                        <span className="text-lg">{getPriorityIcon(obligation.priority)}</span>
                         <h3 className="font-semibold text-gray-900">{obligation.category_name}</h3>
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
-                          {t('committed')}
+                        <span className={`px-2 py-1 text-xs rounded-full font-medium border ${getConfidenceColor(obligation.confidence_level)}`}>
+                          {obligation.confidence_level?.toUpperCase()} ({obligation.confidence_level === 'high' ? '95%' : obligation.confidence_level === 'medium' ? '80%' : '60%'})
                         </span>
+                        {obligation.status !== 'active' && (
+                          <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium">
+                            {obligation.status.replace('_', ' ').toUpperCase()}
+                          </span>
+                        )}
                       </div>
-                      <p className="text-gray-700">{obligation.description}</p>
+                      <p className="text-gray-700 mb-2">{obligation.description}</p>
+                      {obligation.contract_reference && (
+                        <p className="text-sm text-gray-600 mb-1">📋 Reference: {obligation.contract_reference}</p>
+                      )}
+                      {obligation.vendor_supplier && (
+                        <p className="text-sm text-gray-600 mb-1">🏢 Vendor: {obligation.vendor_supplier}</p>
+                      )}
                       <div className="text-sm text-gray-500 mt-1">
-                        <p>Commitment Date: {new Date(obligation.commitment_date).toLocaleDateString()}</p>
+                        <p>Commitment: {new Date(obligation.commitment_date).toLocaleDateString()}</p>
                         {obligation.expected_incur_date && (
                           <p>Expected Incur: {new Date(obligation.expected_incur_date).toLocaleDateString()}</p>
                         )}
+                        <p>Weighted: €{getWeightedAmount(obligation.amount, obligation.confidence_level).toLocaleString()}</p>
                       </div>
                     </div>
                     <div className="text-right ml-4">
                       <p className="text-2xl font-bold text-blue-600 mb-2">€{obligation.amount.toLocaleString()}</p>
-                      <button
-                        onClick={() => deleteObligation(obligation.id)}
-                        className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
-                      >
-                        {t('delete')}
-                      </button>
+                      <div className="flex flex-col space-y-1">
+                        {activeTab === 'active' && (
+                          <>
+                            <button
+                              onClick={() => updateObligationStatus(obligation.id, 'converted_to_actual')}
+                              className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
+                            >
+                              ✓ Convert to Actual
+                            </button>
+                            <button
+                              onClick={() => updateObligationStatus(obligation.id, 'cancelled')}
+                              className="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700 transition-colors"
+                            >
+                              ⚠ Cancel
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => deleteObligation(obligation.id)}
+                          className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
+                        >
+                          🗑 {t('delete')}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
