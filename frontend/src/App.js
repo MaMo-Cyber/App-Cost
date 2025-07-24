@@ -1204,7 +1204,7 @@ const CostStatusManager = ({ project, onBack }) => {
               <div>
                 {paidCosts.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-gray-500">No paid costs yet.</p>
+                    <p className="text-gray-500">{t('noPaidCosts')}</p>
                   </div>
                 ) : (
                   paidCosts.map((cost) => (
