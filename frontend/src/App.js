@@ -1602,7 +1602,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                 {showActionsMenu && (
                   <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border z-50">
                     <div className="py-2">
-                      <div className="px-4 py-2 text-sm font-medium text-gray-500 border-b">Project Actions</div>
+                      <div className="px-4 py-2 text-sm font-medium text-gray-500 border-b">{t('projectActions')}</div>
                       
                       <button
                         onClick={() => {
