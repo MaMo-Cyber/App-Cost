@@ -1013,7 +1013,7 @@ const PaymentTimeline = ({ project, onBack }) => {
                               onClick={() => markAsPaid(entry.id)}
                               className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
                             >
-                              Mark Paid ✓
+                              {t('markPaid')} ✓
                             </button>
                             <input
                               type="date"
