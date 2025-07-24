@@ -3271,6 +3271,7 @@ const ProjectSetup = ({ onProjectCreated, onCancel }) => {
 
 // Cost Entry Component (unchanged)
 const CostEntry = ({ project, onBack }) => {
+  const { t } = useLanguage();
   const [categories, setCategories] = useState([]);
   const [phases, setPhases] = useState([]);
   const [formData, setFormData] = useState({
