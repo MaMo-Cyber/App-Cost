@@ -2950,6 +2950,7 @@ const EditCostEstimates = ({ project, onBack }) => {
 // Project Setup Component (unchanged)
 const ProjectSetup = ({ onProjectCreated, onCancel }) => {
   const [step, setStep] = useState(1);
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
