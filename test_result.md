@@ -477,9 +477,10 @@ metadata:
 
 test_plan:
   current_focus: 
-    - "Multi-Step Project Creation with Cost Estimates"
-    - "EVM Dashboard Integration"
-    - "Edit Cost Estimates Functionality"
+    - "Enhanced EVM Analysis with Comprehensive Explanations"
+    - "Create Ongoing Demo Project Functionality"
+    - "Future Phase Analysis for Unfinished Projects"
+    - "Create Ongoing Demo Project Button (Frontend)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
