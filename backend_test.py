@@ -1764,6 +1764,244 @@ def test_edge_cases():
     
     return True
 
+def test_database_cleanup_for_evm_demonstration():
+    """
+    Clean up the project database as requested by the user:
+    1. List all current projects with their financial status
+    2. Identify projects to keep (1 negative cost performance, 1 positive cost performance)
+    3. Delete unnecessary projects except these 2
+    """
+    print("\n🧪 Testing Database Cleanup for EVM Demonstration")
+    print("=" * 60)
+    
+    # Step 1: List all current projects
+    print("📋 STEP 1: Listing all current projects with financial status")
+    projects, status = make_request('GET', '/projects')
+    if status != 200 or not projects:
+        print("  ❌ Failed to get projects list")
+        return False
+    
+    print(f"  📊 Found {len(projects)} total projects in database")
+    
+    if len(projects) == 0:
+        print("  ⚠️  No projects found in database")
+        return True
+    
+    # Step 2: Analyze each project's cost performance
+    print("\n📈 STEP 2: Analyzing cost performance for each project")
+    project_analysis = []
+    
+    for project in projects:
+        project_id = project['id']
+        project_name = project['name']
+        project_budget = project['total_budget']
+        
+        print(f"\n  🔍 Analyzing Project: {project_name}")
+        print(f"    💰 Budget: €{project_budget:,.2f}")
+        print(f"    🆔 ID: {project_id}")
+        
+        # Get project summary with EVM metrics
+        summary, status = make_request('GET', f'/projects/{project_id}/summary')
+        if status != 200 or not summary:
+            print(f"    ❌ Failed to get summary for project {project_name}")
+            continue
+        
+        # Extract financial metrics
+        total_spent = summary.get('total_spent', 0)
+        total_outstanding = summary.get('total_outstanding', 0)
+        total_paid = summary.get('total_paid', 0)
+        budget_utilization = summary.get('budget_utilization', 0)
+        
+        # Extract EVM metrics if available
+        evm_metrics = summary.get('evm_metrics', {})
+        earned_value = evm_metrics.get('earned_value', 0)
+        actual_cost = evm_metrics.get('actual_cost', 0)
+        cost_performance_index = evm_metrics.get('cost_performance_index', 1.0)
+        cost_status = evm_metrics.get('cost_status', 'Unknown')
+        
+        # Calculate cost performance (EV vs AC)
+        if actual_cost > 0:
+            cost_performance = earned_value - actual_cost  # Positive = under budget, Negative = over budget
+            performance_ratio = earned_value / actual_cost if actual_cost > 0 else 1.0
+        else:
+            cost_performance = 0
+            performance_ratio = 1.0
+        
+        # Determine performance category
+        if cost_performance < 0:
+            performance_category = "NEGATIVE (Over Budget)"
+        elif cost_performance > 0:
+            performance_category = "POSITIVE (Under Budget)"
+        else:
+            performance_category = "NEUTRAL (On Budget)"
+        
+        print(f"    📊 Financial Status:")
+        print(f"      Total Spent: €{total_spent:,.2f}")
+        print(f"      Outstanding: €{total_outstanding:,.2f}")
+        print(f"      Paid: €{total_paid:,.2f}")
+        print(f"      Budget Utilization: {budget_utilization:.1f}%")
+        print(f"    📈 EVM Analysis:")
+        print(f"      Earned Value (EV): €{earned_value:,.2f}")
+        print(f"      Actual Cost (AC): €{actual_cost:,.2f}")
+        print(f"      Cost Performance: €{cost_performance:,.2f}")
+        print(f"      CPI: {cost_performance_index:.3f}")
+        print(f"      Cost Status: {cost_status}")
+        print(f"      Performance Category: {performance_category}")
+        
+        project_analysis.append({
+            'id': project_id,
+            'name': project_name,
+            'budget': project_budget,
+            'total_spent': total_spent,
+            'earned_value': earned_value,
+            'actual_cost': actual_cost,
+            'cost_performance': cost_performance,
+            'cost_performance_index': cost_performance_index,
+            'cost_status': cost_status,
+            'performance_category': performance_category,
+            'budget_utilization': budget_utilization
+        })
+    
+    if len(project_analysis) == 0:
+        print("  ❌ No projects could be analyzed")
+        return False
+    
+    # Step 3: Identify projects to keep
+    print(f"\n🎯 STEP 3: Identifying projects to keep (1 negative, 1 positive cost performance)")
+    
+    # Find projects with negative cost performance (over budget)
+    negative_projects = [p for p in project_analysis if p['cost_performance'] < 0]
+    # Find projects with positive cost performance (under budget)
+    positive_projects = [p for p in project_analysis if p['cost_performance'] > 0]
+    
+    print(f"  📉 Projects with NEGATIVE cost performance (over budget): {len(negative_projects)}")
+    for proj in negative_projects:
+        print(f"    - {proj['name']}: EV €{proj['earned_value']:,.2f} vs AC €{proj['actual_cost']:,.2f} (Performance: €{proj['cost_performance']:,.2f})")
+    
+    print(f"  📈 Projects with POSITIVE cost performance (under budget): {len(positive_projects)}")
+    for proj in positive_projects:
+        print(f"    - {proj['name']}: EV €{proj['earned_value']:,.2f} vs AC €{proj['actual_cost']:,.2f} (Performance: €{proj['cost_performance']:,.2f})")
+    
+    # Select the best examples for demonstration
+    projects_to_keep = []
+    
+    # Select 1 project with most negative cost performance (worst over budget)
+    if negative_projects:
+        worst_performer = min(negative_projects, key=lambda x: x['cost_performance'])
+        projects_to_keep.append(worst_performer)
+        print(f"  ✅ Selected NEGATIVE performer: {worst_performer['name']} (Performance: €{worst_performer['cost_performance']:,.2f})")
+    
+    # Select 1 project with most positive cost performance (best under budget)
+    if positive_projects:
+        best_performer = max(positive_projects, key=lambda x: x['cost_performance'])
+        projects_to_keep.append(best_performer)
+        print(f"  ✅ Selected POSITIVE performer: {best_performer['name']} (Performance: €{best_performer['cost_performance']:,.2f})")
+    
+    # If we don't have both types, select based on CPI
+    if len(projects_to_keep) < 2:
+        print("  ⚠️  Not enough projects with clear positive/negative performance, selecting based on CPI...")
+        
+        # Sort by CPI - lowest first (worst performance), highest last (best performance)
+        sorted_by_cpi = sorted(project_analysis, key=lambda x: x['cost_performance_index'])
+        
+        if len(sorted_by_cpi) >= 2:
+            # Keep the worst and best performers
+            if len(projects_to_keep) == 0:
+                projects_to_keep.append(sorted_by_cpi[0])  # Worst CPI
+                projects_to_keep.append(sorted_by_cpi[-1])  # Best CPI
+            elif len(projects_to_keep) == 1:
+                # Add the opposite type
+                existing_cpi = projects_to_keep[0]['cost_performance_index']
+                if existing_cpi < 1.0:  # We have a bad performer, add a good one
+                    projects_to_keep.append(sorted_by_cpi[-1])
+                else:  # We have a good performer, add a bad one
+                    projects_to_keep.append(sorted_by_cpi[0])
+            
+            print(f"  ✅ Selected based on CPI: {projects_to_keep[0]['name']} (CPI: {projects_to_keep[0]['cost_performance_index']:.3f})")
+            if len(projects_to_keep) > 1:
+                print(f"  ✅ Selected based on CPI: {projects_to_keep[1]['name']} (CPI: {projects_to_keep[1]['cost_performance_index']:.3f})")
+    
+    if len(projects_to_keep) == 0:
+        print("  ❌ No suitable projects found to keep")
+        return False
+    
+    # Step 4: Delete unnecessary projects
+    print(f"\n🗑️  STEP 4: Deleting unnecessary projects (keeping {len(projects_to_keep)} projects)")
+    
+    keep_ids = [p['id'] for p in projects_to_keep]
+    projects_to_delete = [p for p in project_analysis if p['id'] not in keep_ids]
+    
+    print(f"  📋 Projects to KEEP:")
+    for proj in projects_to_keep:
+        print(f"    ✅ {proj['name']} (ID: {proj['id']}) - Performance: €{proj['cost_performance']:,.2f}, CPI: {proj['cost_performance_index']:.3f}")
+    
+    print(f"  📋 Projects to DELETE: {len(projects_to_delete)}")
+    
+    deleted_count = 0
+    for proj in projects_to_delete:
+        print(f"    🗑️  Deleting: {proj['name']} (ID: {proj['id']})")
+        
+        delete_result, status = make_request('DELETE', f'/projects/{proj["id"]}')
+        if status == 200:
+            deleted_count += 1
+            print(f"      ✅ Successfully deleted {proj['name']}")
+        else:
+            print(f"      ❌ Failed to delete {proj['name']} (Status: {status})")
+    
+    # Step 5: Confirm final state
+    print(f"\n✅ STEP 5: Confirming final state")
+    
+    final_projects, status = make_request('GET', '/projects')
+    if status != 200:
+        print("  ❌ Failed to get final projects list")
+        return False
+    
+    print(f"  📊 Final project count: {len(final_projects)}")
+    print(f"  🗑️  Projects deleted: {deleted_count}")
+    
+    if len(final_projects) != len(projects_to_keep):
+        print(f"  ⚠️  Warning: Expected {len(projects_to_keep)} projects, found {len(final_projects)}")
+    
+    print(f"\n  📋 Final Projects in Database:")
+    for project in final_projects:
+        # Get updated summary for final verification
+        summary, status = make_request('GET', f'/projects/{project["id"]}/summary')
+        if status == 200 and summary:
+            evm = summary.get('evm_metrics', {})
+            cost_performance = evm.get('earned_value', 0) - evm.get('actual_cost', 0)
+            cpi = evm.get('cost_performance_index', 1.0)
+            performance_type = "NEGATIVE (Over Budget)" if cost_performance < 0 else "POSITIVE (Under Budget)" if cost_performance > 0 else "NEUTRAL"
+            
+            print(f"    ✅ {project['name']}")
+            print(f"       Budget: €{project['total_budget']:,.2f}")
+            print(f"       Cost Performance: €{cost_performance:,.2f} ({performance_type})")
+            print(f"       CPI: {cpi:.3f}")
+        else:
+            print(f"    ✅ {project['name']} (Budget: €{project['total_budget']:,.2f})")
+    
+    print(f"\n🎉 Database cleanup completed successfully!")
+    print(f"   📊 Kept {len(final_projects)} projects demonstrating both good and poor cost performance")
+    print(f"   🗑️  Deleted {deleted_count} unnecessary projects")
+    print(f"   🎯 Database is now optimized for EVM system testing")
+    
+    return True
+
+def run_database_cleanup():
+    """Run only the database cleanup test"""
+    print("🚀 Starting Database Cleanup for EVM Demonstration")
+    print("=" * 60)
+    
+    try:
+        result = test_database_cleanup_for_evm_demonstration()
+        if result:
+            print("\n🎉 DATABASE CLEANUP COMPLETED SUCCESSFULLY!")
+        else:
+            print("\n❌ DATABASE CLEANUP FAILED!")
+        return result
+    except Exception as e:
+        print(f"\n💥 DATABASE CLEANUP ERROR: {str(e)}")
+        return False
+
 def run_all_tests():
     """Run all backend tests"""
     print("🚀 Starting Comprehensive Backend API Testing")
@@ -1828,5 +2066,9 @@ def run_all_tests():
         return False
 
 if __name__ == "__main__":
-    success = run_all_tests()
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "cleanup":
+        success = run_database_cleanup()
+    else:
+        success = run_all_tests()
     sys.exit(0 if success else 1)
