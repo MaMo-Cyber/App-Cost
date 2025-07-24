@@ -1166,7 +1166,7 @@ const CostStatusManager = ({ project, onBack }) => {
               <div>
                 {outstandingCosts.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-gray-500">No outstanding costs! 🎉</p>
+                    <p className="text-gray-500">{t('noOutstandingCosts')}</p>
                   </div>
                 ) : (
                   outstandingCosts.map((cost) => (
