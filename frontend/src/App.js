@@ -3329,6 +3329,246 @@ const ProjectSetup = ({ onProjectCreated, onCancel }) => {
   );
 };
 
+// Obligation Management Component
+const ObligationManager = ({ project, onBack }) => {
+  const [obligations, setObligations] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const { t } = useLanguage();
+  const API = process.env.REACT_APP_BACKEND_URL;
+  
+  const [formData, setFormData] = useState({
+    category_id: '',
+    description: '',
+    amount: '',
+    expected_incur_date: ''
+  });
+
+  useEffect(() => {
+    fetchObligations();
+    fetchCategories();
+  }, []);
+
+  const fetchObligations = async () => {
+    try {
+      const response = await axios.get(`${API}/projects/${project.id}/obligations`);
+      setObligations(response.data);
+    } catch (error) {
+      console.error('Error fetching obligations:', error);
+    }
+  };
+  
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(`${API}/cost-categories`);
+      setCategories(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/obligations`, {
+        project_id: project.id,
+        ...formData,
+        amount: parseFloat(formData.amount)
+      });
+      
+      setFormData({
+        category_id: '',
+        description: '',
+        amount: '',
+        expected_incur_date: ''
+      });
+      setShowAddForm(false);
+      fetchObligations();
+      alert('Obligation added successfully!');
+    } catch (error) {
+      console.error('Error adding obligation:', error);
+      alert('Error adding obligation');
+    }
+  };
+
+  const deleteObligation = async (obligationId) => {
+    if (window.confirm('Are you sure you want to delete this obligation?')) {
+      try {
+        await axios.delete(`${API}/obligations/${obligationId}`);
+        fetchObligations();
+        alert('Obligation deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting obligation:', error);
+        alert('Error deleting obligation');
+      }
+    }
+  };
+
+  const totalObligations = obligations.reduce((sum, obj) => sum + obj.amount, 0);
+
+  if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border p-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">{t('manageObligations')}</h2>
+              <p className="text-gray-600">Manage committed costs for {project.name}</p>
+            </div>
+            <button
+              onClick={onBack}
+              className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              ← {t('backToDashboard')}
+            </button>
+          </div>
+
+          {/* Summary */}
+          <div className="bg-blue-50 p-6 rounded-lg border border-blue-200 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-blue-800 mb-2">{t('obligations')} Summary</h3>
+                <p className="text-3xl font-bold text-blue-600">€{totalObligations.toLocaleString()}</p>
+                <p className="text-sm text-blue-600">{obligations.length} {t('committed')} items</p>
+              </div>
+              <div className="text-right">
+                <button
+                  onClick={() => setShowAddForm(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  + {t('addObligation')}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Add Form */}
+          {showAddForm && (
+            <div className="bg-gray-50 p-6 rounded-lg border mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('addObligation')}</h3>
+              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('costCategory')}</label>
+                  <select
+                    value={formData.category_id}
+                    onChange={(e) => setFormData({...formData, category_id: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  >
+                    <option value="">Select category...</option>
+                    {categories.map(category => (
+                      <option key={category.id} value={category.id}>{category.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('obligationAmount')}</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.amount}
+                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('obligationDescription')}</label>
+                  <input
+                    type="text"
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="PO #12345, Equipment procurement..."
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('expectedIncurDate')}</label>
+                  <input
+                    type="date"
+                    value={formData.expected_incur_date}
+                    onChange={(e) => setFormData({...formData, expected_incur_date: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  <div className="flex space-x-3">
+                    <button
+                      type="submit"
+                      className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      {t('save')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddForm(false)}
+                      className="px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                    >
+                      {t('cancel')}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Obligations List */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">{t('committed')} {t('obligations')}</h3>
+            {obligations.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No obligations found. Click "Add Obligation" to create one.</p>
+              </div>
+            ) : (
+              obligations.map((obligation) => (
+                <div key={obligation.id} className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <h3 className="font-semibold text-gray-900">{obligation.category_name}</h3>
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                          {t('committed')}
+                        </span>
+                      </div>
+                      <p className="text-gray-700">{obligation.description}</p>
+                      <div className="text-sm text-gray-500 mt-1">
+                        <p>Commitment Date: {new Date(obligation.commitment_date).toLocaleDateString()}</p>
+                        {obligation.expected_incur_date && (
+                          <p>Expected Incur: {new Date(obligation.expected_incur_date).toLocaleDateString()}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right ml-4">
+                      <p className="text-2xl font-bold text-blue-600 mb-2">€{obligation.amount.toLocaleString()}</p>
+                      <button
+                        onClick={() => deleteObligation(obligation.id)}
+                        className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
+                      >
+                        {t('delete')}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Cost Entry Component (unchanged)
 const CostEntry = ({ project, onBack }) => {
   const { t } = useLanguage();
