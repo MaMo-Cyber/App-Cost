@@ -338,12 +338,12 @@ def calculate_enhanced_evm_metrics(
         base_remaining_budget = budget_at_completion * remaining_work_percent
         
         # Adjust ETC based on cost performance
-        if cost_performance_index_adj < 1.0:
+        if cost_performance_index_adj < 1.0 and cost_performance_index_adj > 0:
             # Performance is poor, increase ETC
             performance_factor = 1.0 / cost_performance_index_adj
             estimate_to_complete_adj = base_remaining_budget * performance_factor
         else:
-            # Performance is good, use conservative estimate
+            # Performance is good or CPI is zero, use conservative estimate
             estimate_to_complete_adj = base_remaining_budget * 1.05  # 5% buffer
     
     estimate_at_completion_adj = actual_cost + total_obligations + estimate_to_complete_adj
