@@ -1934,8 +1934,269 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
             categoryName={selectedCategory}
           />
 
-        {/* Comprehensive EVM Analysis & Explanations */}
+        {/* Enhanced EVM Metrics Section with Dual Standard vs Adjusted Display */}
         {summary.evm_metrics && (
+          <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">{t('earnedValueManagement')}</h2>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="includeObligations"
+                    defaultChecked
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="includeObligations" className="text-sm text-gray-700">
+                    {t('includeObligations')}
+                  </label>
+                  <div className="relative group">
+                    <svg className="w-4 h-4 text-gray-400 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                      {t('obligationsTooltip')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Early Warning Alerts */}
+            {summary.evm_metrics.early_warnings && summary.evm_metrics.early_warnings.length > 0 && (
+              <div className="mb-6 space-y-2">
+                {summary.evm_metrics.early_warnings.map((warning, index) => (
+                  <div key={index} className={`p-4 rounded-lg border-l-4 ${
+                    warning === 'STAKEHOLDER_NOTIFICATION' ? 'bg-red-50 border-red-400' :
+                    warning === 'FORMAL_CHANGE_REVIEW' ? 'bg-orange-50 border-orange-400' :
+                    'bg-yellow-50 border-yellow-400'
+                  }`}>
+                    <div className="flex items-center">
+                      <svg className={`w-5 h-5 mr-3 ${
+                        warning === 'STAKEHOLDER_NOTIFICATION' ? 'text-red-600' :
+                        warning === 'FORMAL_CHANGE_REVIEW' ? 'text-orange-600' :
+                        'text-yellow-600'
+                      }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.232 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                      </svg>
+                      <div>
+                        <h4 className={`font-semibold ${
+                          warning === 'STAKEHOLDER_NOTIFICATION' ? 'text-red-800' :
+                          warning === 'FORMAL_CHANGE_REVIEW' ? 'text-orange-800' :
+                          'text-yellow-800'
+                        }`}>
+                          {warning === 'COST_CONTROL_ALERT' && 'Cost Control Alert'}
+                          {warning === 'FORMAL_CHANGE_REVIEW' && 'Formal Change Review Required'}
+                          {warning === 'STAKEHOLDER_NOTIFICATION' && 'Stakeholder Notification Required'}
+                        </h4>
+                        <p className={`text-sm ${
+                          warning === 'STAKEHOLDER_NOTIFICATION' ? 'text-red-700' :
+                          warning === 'FORMAL_CHANGE_REVIEW' ? 'text-orange-700' :
+                          'text-yellow-700'
+                        }`}>
+                          {warning === 'COST_CONTROL_ALERT' && 'Adjusted CPI has fallen below 0.90 - immediate cost control measures recommended'}
+                          {warning === 'FORMAL_CHANGE_REVIEW' && 'Adjusted EAC exceeds 110% of budget - formal change control process should be initiated'}
+                          {warning === 'STAKEHOLDER_NOTIFICATION' && 'High budget breach risk detected - stakeholders should be notified immediately'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Key Metrics Cards - Enhanced with Standard vs Adjusted */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-50 p-4 rounded-lg text-center">
+                <div className="text-blue-600 mb-2">
+                  <svg className="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-gray-600">{t('plannedValue')} (PV)</p>
+                <p className="text-xl font-bold text-blue-600">€{summary.evm_metrics.planned_value?.toLocaleString()}</p>
+              </div>
+
+              <div className="bg-green-50 p-4 rounded-lg text-center">
+                <div className="text-green-600 mb-2">
+                  <svg className="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-gray-600">{t('earnedValue')} (EV)</p>
+                <p className="text-xl font-bold text-green-600">€{summary.evm_metrics.earned_value?.toLocaleString()}</p>
+              </div>
+
+              <div className="bg-red-50 p-4 rounded-lg text-center">
+                <div className="text-red-600 mb-2">
+                  <svg className="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-gray-600">{t('actualCost')} (AC)</p>
+                <p className="text-xl font-bold text-red-600">€{summary.evm_metrics.actual_cost?.toLocaleString()}</p>
+              </div>
+
+              <div className="bg-purple-50 p-4 rounded-lg text-center">
+                <div className="text-purple-600 mb-2">
+                  <svg className="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-gray-600">{t('obligations')} (Weighted)</p>
+                <p className="text-xl font-bold text-purple-600">€{(summary.evm_metrics.total_obligations || 0).toLocaleString()}</p>
+              </div>
+            </div>
+
+            {/* Dual Metrics Comparison - Standard vs Adjusted */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              {/* Standard Metrics */}
+              <div className="bg-gray-50 p-6 rounded-lg border">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                  </svg>
+                  {t('standardMetrics')}
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">{t('costPerformanceIndex')} (CPI)</span>
+                    <div className="flex items-center space-x-2">
+                      <span className={`font-bold text-lg ${
+                        summary.evm_metrics.cost_performance_index > 1 ? 'text-green-600' : 
+                        summary.evm_metrics.cost_performance_index < 0.95 ? 'text-red-600' : 'text-yellow-600'
+                      }`}>
+                        {summary.evm_metrics.cost_performance_index?.toFixed(3)}
+                      </span>
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                        summary.evm_metrics.cost_status === 'Over Budget' ? 'bg-red-100 text-red-800' :
+                        summary.evm_metrics.cost_status === 'Under Budget' ? 'bg-green-100 text-green-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {t(summary.evm_metrics.cost_status?.toLowerCase().replace(' ', ''))}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">{t('eacForecast')}</span>
+                    <span className="font-bold text-gray-900">€{summary.evm_metrics.estimate_at_completion?.toLocaleString()}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Variance at Completion</span>
+                    <span className={`font-bold ${
+                      summary.evm_metrics.variance_at_completion >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      €{summary.evm_metrics.variance_at_completion?.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Adjusted Metrics */}
+              <div className="bg-blue-50 p-6 rounded-lg border-2 border-blue-200">
+                <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                  </svg>
+                  {t('adjustedMetrics')}
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-600">{t('adjustedCPI')}</span>
+                    <div className="flex items-center space-x-2">
+                      <span className={`font-bold text-lg ${
+                        (summary.evm_metrics.cost_performance_index_adj || 0) > 1 ? 'text-green-600' : 
+                        (summary.evm_metrics.cost_performance_index_adj || 0) < 0.90 ? 'text-red-600' : 'text-yellow-600'
+                      }`}>
+                        {(summary.evm_metrics.cost_performance_index_adj || 0).toFixed(3)}
+                      </span>
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                        (summary.evm_metrics.cost_status_adj || 'On Budget') === 'Over Budget' ? 'bg-red-100 text-red-800' :
+                        (summary.evm_metrics.cost_status_adj || 'On Budget') === 'Under Budget' ? 'bg-green-100 text-green-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {t((summary.evm_metrics.cost_status_adj || 'onBudget').toLowerCase().replace(' ', ''))}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-600">{t('adjustedEAC')}</span>
+                    <span className="font-bold text-blue-900">€{(summary.evm_metrics.estimate_at_completion_adj || 0).toLocaleString()}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-600">Adjusted Variance</span>
+                    <span className={`font-bold ${
+                      (summary.evm_metrics.variance_at_completion_adj || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      €{(summary.evm_metrics.variance_at_completion_adj || 0).toLocaleString()}
+                    </span>
+                  </div>
+
+                  {/* Performance Divergence Indicator */}
+                  {Math.abs((summary.evm_metrics.cost_performance_index_adj || 0) - summary.evm_metrics.cost_performance_index) > 0.1 && (
+                    <div className="bg-yellow-100 border border-yellow-200 rounded-lg p-3 mt-3">
+                      <div className="flex items-center space-x-2">
+                        <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.232 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                        <span className="text-sm font-medium text-yellow-800">
+                          Significant Divergence: {Math.abs(((summary.evm_metrics.cost_performance_index_adj || 0) - summary.evm_metrics.cost_performance_index) * 100).toFixed(1)}% difference
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Budget Breach Risk Indicator */}
+                  {summary.evm_metrics.budget_breach_risk && (
+                    <div className="bg-red-100 border border-red-200 rounded-lg p-3 mt-3">
+                      <div className="flex items-center space-x-2">
+                        <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.232 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                        <div>
+                          <span className="text-sm font-medium text-red-800">{t('budgetBreachRisk')}</span>
+                          <span className={`ml-2 px-2 py-1 text-xs rounded-full font-medium ${
+                            summary.evm_metrics.breach_severity === 'High' ? 'bg-red-200 text-red-800' :
+                            summary.evm_metrics.breach_severity === 'Medium' ? 'bg-orange-200 text-orange-800' :
+                            'bg-yellow-200 text-yellow-800'
+                          }`}>
+                            {summary.evm_metrics.breach_severity} Risk
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Schedule Performance Indicator */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">{t('schedulePerformanceIndex')} (SPI)</span>
+                <div className="flex items-center space-x-2">
+                  <span className={`font-bold ${
+                    summary.evm_metrics.schedule_performance_index > 1 ? 'text-green-600' : 
+                    summary.evm_metrics.schedule_performance_index < 0.95 ? 'text-red-600' : 'text-yellow-600'
+                  }`}>
+                    {summary.evm_metrics.schedule_performance_index?.toFixed(3)}
+                  </span>
+                  <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                    summary.evm_metrics.schedule_status === 'Behind' ? 'bg-red-100 text-red-800' :
+                    summary.evm_metrics.schedule_status === 'Ahead' ? 'bg-green-100 text-green-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {t(summary.evm_metrics.schedule_status?.toLowerCase())}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
           <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">📊 {t('earnedValueManagement')} - Detailed Analysis</h3>
             
