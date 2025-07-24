@@ -4207,6 +4207,8 @@ function App() {
             onSwitchProject={handleSwitchProject}
           />
         );
+      case 'obligations':
+        return <ObligationManager project={selectedProject} onBack={() => setCurrentView('dashboard')} />;
       case 'costs':
         return (
           <CostEntry 
