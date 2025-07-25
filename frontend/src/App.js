@@ -18,8 +18,6 @@ import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Language Context
-const LanguageContext = createContext();
-
 // Comprehensive Gantt Chart Component
 const GanttChart = ({ project, onBack }) => {
   const [phases, setPhases] = useState([]);
