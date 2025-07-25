@@ -4191,7 +4191,7 @@ const CostEntry = ({ project, onBack }) => {
             due_date: split.payment_date
           };
 
-          await axios.post(`${API}/cost-entries`, splitEntry);
+          await axios.post(`${API}/api/cost-entries`, splitEntry);
 
           // Create obligation for outstanding payments
           if (split.status === 'outstanding' && split.amount > 0) {
