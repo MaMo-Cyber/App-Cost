@@ -3295,7 +3295,59 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                     },
                     annotation: {
                       annotations: {
-                        // Current date marker
+                        // Project Start Marker
+                        projectStart: {
+                          type: 'line',
+                          xMin: 0,
+                          xMax: 0,
+                          borderColor: 'rgb(34, 197, 94)',
+                          borderWidth: 2,
+                          label: {
+                            content: `🚀 ${t('projectStart')}`,
+                            enabled: true,
+                            position: 'start',
+                            backgroundColor: 'rgba(34, 197, 94, 0.9)',
+                            color: 'white',
+                            font: {
+                              weight: 'bold',
+                              size: 10
+                            },
+                            padding: 4,
+                            yAdjust: -30
+                          }
+                        },
+                        // Project End Marker
+                        projectEnd: {
+                          type: 'line',
+                          xMin: (() => {
+                            const projectStart = new Date(project.start_date);
+                            const projectEnd = new Date(project.end_date);
+                            const totalMonths = (projectEnd.getFullYear() - projectStart.getFullYear()) * 12 + (projectEnd.getMonth() - projectStart.getMonth());
+                            return Math.max(0, totalMonths);
+                          })(),
+                          xMax: (() => {
+                            const projectStart = new Date(project.start_date);
+                            const projectEnd = new Date(project.end_date);
+                            const totalMonths = (projectEnd.getFullYear() - projectStart.getFullYear()) * 12 + (projectEnd.getMonth() - projectStart.getMonth());
+                            return Math.max(0, totalMonths);
+                          })(),
+                          borderColor: 'rgb(239, 68, 68)',
+                          borderWidth: 2,
+                          label: {
+                            content: `🏁 ${t('projectEnd')}`,
+                            enabled: true,
+                            position: 'start',
+                            backgroundColor: 'rgba(239, 68, 68, 0.9)',
+                            color: 'white',
+                            font: {
+                              weight: 'bold',
+                              size: 10
+                            },
+                            padding: 4,
+                            yAdjust: -30
+                          }
+                        },
+                        // Current Date Marker - Improved as small red dotted line
                         currentDate: {
                           type: 'line',
                           xMin: (() => {
@@ -3310,21 +3362,21 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                             const monthsFromStart = (now.getFullYear() - projectStart.getFullYear()) * 12 + (now.getMonth() - projectStart.getMonth());
                             return Math.max(0, monthsFromStart);
                           })(),
-                          borderColor: 'rgb(34, 197, 94)',
-                          borderWidth: 3,
-                          borderDash: [5, 5],
+                          borderColor: 'rgb(220, 38, 38)',
+                          borderWidth: 1,
+                          borderDash: [3, 3],
                           label: {
-                            content: `📍 ${t('currentDate')} (${new Date().toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US')})`,
+                            content: `📍 ${t('today')}`,
                             enabled: true,
                             position: 'start',
-                            backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                            backgroundColor: 'rgba(220, 38, 38, 0.9)',
                             color: 'white',
                             font: {
                               weight: 'bold',
-                              size: 11
+                              size: 9
                             },
-                            padding: 6,
-                            yAdjust: -20
+                            padding: 3,
+                            yAdjust: -50
                           }
                         },
                         // Cost overrun prediction (if exists)
