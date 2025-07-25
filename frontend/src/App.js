@@ -1346,12 +1346,55 @@ const CostStatusManager = ({ project, onBack }) => {
                         </div>
                         <div className="text-right ml-4">
                           <p className="text-2xl font-bold text-red-600 mb-2">€{cost.total_amount.toLocaleString()}</p>
-                          <button
-                            onClick={() => updateCostStatus(cost.id, 'paid')}
-                            className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
-                          >
-                            {t('markAsPaid')} ✓
-                          </button>
+                          
+                          {editingCost === cost.id ? (
+                            <div className="space-y-2">
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={paymentAmount}
+                                onChange={(e) => setPaymentAmount(e.target.value)}
+                                placeholder="Payment amount"
+                                className="w-full p-2 border rounded text-sm"
+                                autoFocus
+                              />
+                              <div className="flex space-x-1">
+                                <button
+                                  onClick={() => processManualPayment(cost.id, cost.total_amount)}
+                                  className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
+                                >
+                                  Process Payment
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingCost(null);
+                                    setPaymentAmount('');
+                                  }}
+                                  className="px-2 py-1 bg-gray-400 text-white rounded text-xs hover:bg-gray-500 transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-1">
+                              <button
+                                onClick={() => updateCostStatus(cost.id, 'paid')}
+                                className="w-full px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
+                              >
+                                {t('markAsPaid')} ✓
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingCost(cost.id);
+                                  setPaymentAmount(cost.total_amount.toString());
+                                }}
+                                className="w-full px-3 py-1 bg-orange-500 text-white rounded text-sm hover:bg-orange-600 transition-colors"
+                              >
+                                Manual Payment 💰
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
