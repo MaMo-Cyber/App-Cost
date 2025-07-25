@@ -881,6 +881,8 @@ const translations = {
     notStarted: "Nicht begonnen",
     tasks: "Aufgaben",
     complete: "Abgeschlossen",
+    projektStart: "Projektstart",
+    projektEnd: "Projektende",
     today: "Heute",
     totalPhases: "Gesamte Phasen",
     completedPhases: "Abgeschlossene Phasen",
