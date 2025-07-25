@@ -2843,7 +2843,7 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                         } : {})
                       }
                     }
-                  }}
+                  }}}
                 />
             </div>
 
