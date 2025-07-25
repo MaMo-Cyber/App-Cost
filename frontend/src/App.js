@@ -203,6 +203,7 @@ const translations = {
     budgetAllocated: "Budget Allocated",
     amountSpent: "Amount Spent",
     remainingActual: "Remaining (Actual)",
+    currentDate: "Current Date",
     monthlySpendingTrend: "Monthly Spending Trend",
     costBreakdownByCategory: "Cost Breakdown by Category",
     
