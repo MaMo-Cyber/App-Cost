@@ -4090,7 +4090,7 @@ const CostEntry = ({ project, onBack }) => {
 
   const fetchPhases = async () => {
     try {
-      const response = await axios.get(`${API}/projects/${project.id}/phases`);
+      const response = await axios.get(`${API}/api/projects/${project.id}/phases`);
       setPhases(response.data);
       setLoading(false);
     } catch (error) {
