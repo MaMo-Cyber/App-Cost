@@ -2840,10 +2840,9 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                             color: 'white'
                           }
                         }
-                      }
                     }) : {})
                   }
-                }}
+                }}}
               />
             </div>
 
