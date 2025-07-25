@@ -2842,8 +2842,9 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                           }
                         } : {})
                       }
-                    }}
-              />
+                    }
+                  }}
+                />
             </div>
 
             {/* EVM Timeline Summary */}
