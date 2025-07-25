@@ -3723,7 +3723,7 @@ const ObligationManager = ({ project, onBack }) => {
 
   const updateObligationStatus = async (obligationId, newStatus) => {
     try {
-      await axios.put(`${API}/obligations/${obligationId}/status`, {status: newStatus});
+      await axios.put(`${API}/api/obligations/${obligationId}/status`, {status: newStatus});
       fetchObligations();
       alert(`Obligation marked as ${newStatus}!`);
     } catch (error) {
