@@ -2834,15 +2834,15 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                             borderDash: [10, 5],
                             label: {
                               content: `⚠️ ${t('costOverrunPredicted')} (${language === 'de' ? 'Monat' : 'Month'} ${dashboardData.evm_timeline.overrun_point.month_number})`,
-                            enabled: true,
-                            position: 'start',
-                            backgroundColor: 'rgba(239, 68, 68, 0.8)',
-                            color: 'white'
+                              enabled: true,
+                              position: 'start',
+                              backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                              color: 'white'
+                            }
                           }
-                        }
-                    }) : {})
-                  }
-                }}
+                        } : {})
+                      }
+                    }}
               />
             </div>
 
