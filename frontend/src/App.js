@@ -3675,7 +3675,7 @@ const ObligationManager = ({ project, onBack }) => {
 
   const fetchObligations = async () => {
     try {
-      const response = await axios.get(`${API}/projects/${project.id}/obligations?status=${activeTab}`);
+      const response = await axios.get(`${API}/api/projects/${project.id}/obligations?status=${activeTab}`);
       setObligations(response.data);
     } catch (error) {
       console.error('Error fetching obligations:', error);
