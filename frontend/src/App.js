@@ -244,36 +244,48 @@ const GanttChart = ({ project, onBack }) => {
               ))}
             </div>
 
-            {/* Current Date Indicator - FIXED to only show on chart */}
+            {/* Current Date Indicator - FIXED positioning and visibility */}
             {ganttData.projectStart && (() => {
               const now = new Date();
               const projectStart = new Date(ganttData.projectStart);
               const projectEnd = new Date(ganttData.projectEnd);
               
               // Calculate days from project start to current date
-              const daysFromStart = Math.floor((now - projectStart) / (1000 * 60 * 60 * 24));
+              const daysFromStart = (now - projectStart) / (1000 * 60 * 60 * 24);
               const totalProjectDays = ganttData.totalDays;
               
               // Calculate percentage position (0% = project start, 100% = project end)
-              const positionPercent = Math.max(0, Math.min(100, (daysFromStart / totalProjectDays) * 100));
+              let positionPercent = (daysFromStart / totalProjectDays) * 100;
               
-              // Only show if current date is within project timeline
-              const isWithinProject = now >= projectStart && now <= projectEnd;
+              // Handle dates outside project timeline
+              let markerText = t('today');
+              let markerColor = 'bg-red-500';
               
-              if (!isWithinProject) {
-                return null; // Don't show marker if current date is outside project timeline
+              if (now < projectStart) {
+                // Current date is before project start - show at beginning with different color
+                positionPercent = 0;
+                markerText = t('today') + ' (before start)';
+                markerColor = 'bg-orange-500';
+              } else if (now > projectEnd) {
+                // Current date is after project end - show at end with different color
+                positionPercent = 100;
+                markerText = t('today') + ' (after end)';
+                markerColor = 'bg-gray-500';
               }
+              
+              // Ensure position is within bounds
+              positionPercent = Math.max(0, Math.min(100, positionPercent));
               
               return (
                 <div 
-                  className="absolute top-0 w-0.5 bg-red-500 z-10 pointer-events-none"
+                  className={`absolute top-0 w-0.5 ${markerColor} z-10 pointer-events-none`}
                   style={{
                     left: `calc(256px + ${positionPercent}%)`,
                     height: `${(ganttData.phases?.length || 0) * 48 + 24}px`
                   }}
                 >
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs px-1 py-0.5 rounded whitespace-nowrap">
-                    {t('today')} ({now.toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', { month: 'short', day: 'numeric' })})
+                  <div className={`absolute -top-4 left-1/2 transform -translate-x-1/2 ${markerColor} text-white text-xs px-1 py-0.5 rounded whitespace-nowrap`}>
+                    {markerText} ({now.toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', { month: 'short', day: 'numeric' })})
                   </div>
                 </div>
               );
