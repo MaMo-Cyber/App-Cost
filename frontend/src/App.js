@@ -5523,6 +5523,13 @@ function App() {
             onBack={() => setCurrentView('dashboard')} 
           />
         );
+      case 'gantt-chart':
+        return (
+          <GanttChart 
+            project={currentProject} 
+            onBack={() => setCurrentView('dashboard')} 
+          />
+        );
       case 'editEstimates':
         return (
           <EditCostEstimates 
