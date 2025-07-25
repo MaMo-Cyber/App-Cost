@@ -1986,6 +1986,168 @@ def test_database_cleanup_for_evm_demonstration():
     
     return True
 
+def test_export_all_data():
+    """Test the export-all-data endpoint specifically as requested"""
+    print("\n🧪 Testing Export All Data Endpoint")
+    
+    # Test the export endpoint
+    print("  🔍 Testing GET /api/export-all-data...")
+    export_data, status = make_request('GET', '/export-all-data')
+    if status != 200 or not export_data:
+        print("  ❌ Failed to get export data")
+        return False
+    
+    print("  ✅ Export endpoint accessible and returned data")
+    
+    # Check the response format - should be proper JSON
+    if not isinstance(export_data, dict):
+        print("  ❌ Export data is not a proper JSON object")
+        return False
+    
+    print("  ✅ Response is proper JSON format")
+    
+    # Check for required top-level fields
+    required_fields = ['export_date', 'version', 'data']
+    for field in required_fields:
+        if field not in export_data:
+            print(f"  ❌ Missing required field: {field}")
+            return False
+    
+    print("  ✅ All required top-level fields present")
+    
+    # Check the data structure
+    data_section = export_data['data']
+    if not isinstance(data_section, dict):
+        print("  ❌ Data section is not a proper object")
+        return False
+    
+    # Verify data completeness - should include all major data types
+    expected_data_types = ['projects', 'cost_categories', 'phases', 'cost_entries']
+    for data_type in expected_data_types:
+        if data_type not in data_section:
+            print(f"  ❌ Missing data type: {data_type}")
+            return False
+        
+        if not isinstance(data_section[data_type], list):
+            print(f"  ❌ {data_type} is not a list")
+            return False
+    
+    print("  ✅ All required data types present (projects, cost_categories, phases, cost_entries)")
+    
+    # Test with current data - verify we have the expected 2 projects
+    projects = data_section['projects']
+    print(f"  📊 Found {len(projects)} projects in export")
+    
+    if len(projects) != 2:
+        print(f"  ⚠️  Expected 2 projects based on database cleanup, found {len(projects)}")
+        # This is not a failure, just noting the difference
+    
+    # Verify both projects are included with proper data
+    for i, project in enumerate(projects):
+        if not isinstance(project, dict):
+            print(f"  ❌ Project {i+1} is not a proper object")
+            return False
+        
+        # Check for essential project fields
+        essential_fields = ['id', 'name', 'total_budget']
+        for field in essential_fields:
+            if field not in project:
+                print(f"  ❌ Project {i+1} missing field: {field}")
+                return False
+        
+        print(f"    ✅ Project {i+1}: {project['name']} (Budget: ${project.get('total_budget', 0):,.2f})")
+    
+    # Check cost categories
+    categories = data_section['cost_categories']
+    print(f"  📊 Found {len(categories)} cost categories in export")
+    
+    if len(categories) == 0:
+        print("  ⚠️  No cost categories found in export")
+    else:
+        # Verify category structure
+        sample_category = categories[0]
+        category_fields = ['id', 'name', 'type']
+        for field in category_fields:
+            if field not in sample_category:
+                print(f"  ❌ Cost category missing field: {field}")
+                return False
+        print("  ✅ Cost categories have proper structure")
+    
+    # Check phases
+    phases = data_section['phases']
+    print(f"  📊 Found {len(phases)} phases in export")
+    
+    if len(phases) > 0:
+        # Verify phase structure
+        sample_phase = phases[0]
+        phase_fields = ['id', 'project_id', 'name', 'budget_allocation']
+        for field in phase_fields:
+            if field not in sample_phase:
+                print(f"  ❌ Phase missing field: {field}")
+                return False
+        print("  ✅ Phases have proper structure")
+    
+    # Check cost entries
+    cost_entries = data_section['cost_entries']
+    print(f"  📊 Found {len(cost_entries)} cost entries in export")
+    
+    if len(cost_entries) > 0:
+        # Verify cost entry structure
+        sample_entry = cost_entries[0]
+        entry_fields = ['id', 'project_id', 'category_id', 'total_amount']
+        for field in entry_fields:
+            if field not in sample_entry:
+                print(f"  ❌ Cost entry missing field: {field}")
+                return False
+        print("  ✅ Cost entries have proper structure")
+    
+    # Check export metadata
+    export_date = export_data.get('export_date')
+    if not export_date:
+        print("  ❌ Missing export_date")
+        return False
+    
+    version = export_data.get('version')
+    if not version:
+        print("  ❌ Missing version")
+        return False
+    
+    print(f"  ✅ Export metadata: Date={export_date}, Version={version}")
+    
+    # Verify data relationships (cost entries should reference existing projects)
+    project_ids = {p['id'] for p in projects}
+    orphaned_entries = 0
+    
+    for entry in cost_entries:
+        if entry.get('project_id') not in project_ids:
+            orphaned_entries += 1
+    
+    if orphaned_entries > 0:
+        print(f"  ⚠️  Found {orphaned_entries} cost entries with invalid project references")
+    else:
+        print("  ✅ All cost entries have valid project references")
+    
+    # Calculate total data size for verification
+    total_records = len(projects) + len(categories) + len(phases) + len(cost_entries)
+    print(f"  📈 Total records in export: {total_records}")
+    
+    if total_records == 0:
+        print("  ⚠️  Export contains no data - this may indicate an empty database")
+    else:
+        print("  ✅ Export contains data records")
+    
+    # Test JSON serialization (ensure no MongoDB ObjectId issues)
+    try:
+        import json
+        json_str = json.dumps(export_data)
+        print("  ✅ Export data is properly JSON serializable")
+    except Exception as e:
+        print(f"  ❌ Export data has JSON serialization issues: {e}")
+        return False
+    
+    print("  🎉 Export All Data endpoint working correctly!")
+    return True
+
 def run_database_cleanup():
     """Run only the database cleanup test"""
     print("🚀 Starting Database Cleanup for EVM Demonstration")
