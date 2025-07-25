@@ -20,6 +20,403 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Language Context
 const LanguageContext = createContext();
 
+// Comprehensive Gantt Chart Component
+const GanttChart = ({ project, onBack }) => {
+  const [phases, setPhases] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [ganttData, setGanttData] = useState({});
+  const { t, language } = useLanguage();
+  const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+  useEffect(() => {
+    fetchGanttData();
+  }, []);
+
+  const fetchGanttData = async () => {
+    try {
+      const [phasesResponse, costsResponse] = await Promise.all([
+        axios.get(`${API}/projects/${project.id}/phases`),
+        axios.get(`${API}/projects/${project.id}/cost-entries`)
+      ]);
+      
+      setPhases(phasesResponse.data);
+      
+      // Convert cost entries to tasks grouped by phase
+      const tasksByPhase = {};
+      costsResponse.data.forEach(cost => {
+        const phaseId = cost.phase_id || 'no-phase';
+        if (!tasksByPhase[phaseId]) {
+          tasksByPhase[phaseId] = [];
+        }
+        tasksByPhase[phaseId].push({
+          id: cost.id,
+          name: cost.description || cost.category_name,
+          phaseId: phaseId,
+          startDate: cost.entry_date,
+          endDate: cost.due_date || cost.entry_date,
+          progress: cost.status === 'paid' ? 100 : 0,
+          amount: cost.total_amount,
+          status: cost.status,
+          category: cost.category_name
+        });
+      });
+      
+      setTasks(tasksByPhase);
+      calculateGanttLayout(phasesResponse.data, tasksByPhase);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching Gantt data:', error);
+      setLoading(false);
+    }
+  };
+
+  const calculateGanttLayout = (phasesData, tasksData) => {
+    const projectStart = new Date(project.start_date);
+    const projectEnd = new Date(project.end_date);
+    const totalDays = Math.ceil((projectEnd - projectStart) / (1000 * 60 * 60 * 24));
+    
+    const ganttLayout = {
+      projectStart,
+      projectEnd,
+      totalDays,
+      phases: phasesData.map(phase => {
+        const phaseStart = new Date(phase.start_date);
+        const phaseEnd = new Date(phase.end_date);
+        const startOffset = Math.ceil((phaseStart - projectStart) / (1000 * 60 * 60 * 24));
+        const duration = Math.ceil((phaseEnd - phaseStart) / (1000 * 60 * 60 * 24));
+        
+        return {
+          ...phase,
+          startOffset,
+          duration,
+          widthPercent: (duration / totalDays) * 100,
+          leftPercent: (startOffset / totalDays) * 100,
+          tasks: tasksData[phase.id] || []
+        };
+      })
+    };
+    
+    setGanttData(ganttLayout);
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed': return 'bg-green-500';
+      case 'in_progress': return 'bg-blue-500';
+      case 'delayed': return 'bg-red-500';
+      case 'not_started': return 'bg-gray-400';
+      default: return 'bg-gray-400';
+    }
+  };
+
+  const getTaskStatusColor = (progress) => {
+    if (progress === 100) return 'bg-green-400';
+    if (progress > 0) return 'bg-yellow-400';
+    return 'bg-gray-300';
+  };
+
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US');
+  };
+
+  const generateTimelineLabels = () => {
+    if (!ganttData.projectStart || !ganttData.totalDays) return [];
+    
+    const labels = [];
+    const current = new Date(ganttData.projectStart);
+    const step = Math.max(1, Math.floor(ganttData.totalDays / 12)); // Show ~12 labels max
+    
+    for (let i = 0; i <= ganttData.totalDays; i += step) {
+      const labelDate = new Date(current);
+      labelDate.setDate(labelDate.getDate() + i);
+      labels.push({
+        date: labelDate,
+        label: labelDate.toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', { 
+          month: 'short', 
+          day: 'numeric' 
+        }),
+        position: (i / ganttData.totalDays) * 100
+      });
+    }
+    
+    return labels;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border p-8">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <button
+                onClick={onBack}
+                className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                {t('backToDashboard')}
+              </button>
+              <h1 className="text-3xl font-bold text-gray-900">
+                📊 {t('ganttChart')} - {project.name}
+              </h1>
+              <p className="text-gray-600 mt-2">
+                {t('projectDuration')}: {formatDate(project.start_date)} - {formatDate(project.end_date)}
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-sm text-gray-500 mb-1">{t('totalBudget')}</div>
+              <div className="text-2xl font-bold text-blue-600">€{project.total_budget?.toLocaleString()}</div>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <h3 className="font-semibold mb-3">📋 {t('legend')}</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="flex items-center">
+                <div className="w-4 h-3 bg-green-500 rounded mr-2"></div>
+                <span>{t('completed')}</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-3 bg-blue-500 rounded mr-2"></div>
+                <span>{t('inProgress')}</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-3 bg-red-500 rounded mr-2"></div>
+                <span>{t('delayed')}</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-4 h-3 bg-gray-400 rounded mr-2"></div>
+                <span>{t('notStarted')}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Timeline Header */}
+          <div className="mb-4">
+            <div className="relative h-12 bg-gray-100 rounded-t-lg border-b-2 border-gray-300">
+              {generateTimelineLabels().map((label, index) => (
+                <div
+                  key={index}
+                  className="absolute top-0 h-full flex items-center px-2 text-xs font-medium text-gray-700 border-l border-gray-300"
+                  style={{ left: `${label.position}%` }}
+                >
+                  {label.label}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Gantt Chart */}
+          <div className="space-y-4">
+            {ganttData.phases?.map((phase) => (
+              <motion.div
+                key={phase.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="border rounded-lg p-4 bg-white shadow-sm"
+              >
+                {/* Phase Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center">
+                    <div className={`w-4 h-4 rounded ${getStatusColor(phase.status)} mr-3`}></div>
+                    <div>
+                      <h3 className="font-semibold text-lg">{phase.name}</h3>
+                      <p className="text-sm text-gray-600">
+                        {formatDate(phase.start_date)} - {formatDate(phase.end_date)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold">€{phase.budget_allocation?.toLocaleString()}</div>
+                    <div className="text-xs text-gray-500 capitalize">{phase.status.replace('_', ' ')}</div>
+                  </div>
+                </div>
+
+                {/* Phase Timeline Bar */}
+                <div className="relative h-8 bg-gray-200 rounded-lg mb-4">
+                  <div
+                    className={`absolute top-0 h-full rounded-lg ${getStatusColor(phase.status)} opacity-80`}
+                    style={{
+                      left: `${phase.leftPercent}%`,
+                      width: `${phase.widthPercent}%`
+                    }}
+                  ></div>
+                  <div
+                    className="absolute top-1/2 transform -translate-y-1/2 text-white text-xs font-medium px-2"
+                    style={{ left: `${phase.leftPercent + 1}%` }}
+                  >
+                    {phase.name}
+                  </div>
+                </div>
+
+                {/* Phase Tasks */}
+                {phase.tasks && phase.tasks.length > 0 && (
+                  <div className="mt-4 pl-6">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">📋 {t('tasks')} ({phase.tasks.length})</h4>
+                    <div className="space-y-2">
+                      {phase.tasks.map((task) => (
+                        <motion.div
+                          key={task.id}
+                          whileHover={{ scale: 1.02 }}
+                          className="flex items-center justify-between p-2 bg-gray-50 rounded cursor-pointer hover:bg-gray-100"
+                          onClick={() => {
+                            setSelectedTask(task);
+                            setShowTaskModal(true);
+                          }}
+                        >
+                          <div className="flex items-center">
+                            <div className={`w-3 h-3 rounded-full ${getTaskStatusColor(task.progress)} mr-3`}></div>
+                            <div>
+                              <div className="text-sm font-medium">{task.name}</div>
+                              <div className="text-xs text-gray-500">{task.category}</div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-semibold">€{task.amount?.toLocaleString()}</div>
+                            <div className="text-xs text-gray-500">{task.progress}% {t('complete')}</div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Current Date Indicator */}
+          {ganttData.projectStart && (
+            <div className="relative mt-4">
+              <div
+                className="absolute top-0 w-0.5 h-full bg-red-500 z-10"
+                style={{
+                  left: `${((new Date() - ganttData.projectStart) / (1000 * 60 * 60 * 24)) / ganttData.totalDays * 100}%`
+                }}
+              >
+                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                  📍 {t('today')}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Summary Stats */}
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{ganttData.phases?.length || 0}</div>
+              <div className="text-sm text-gray-600">{t('totalPhases')}</div>
+            </div>
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">
+                {ganttData.phases?.filter(p => p.status === 'completed').length || 0}
+              </div>
+              <div className="text-sm text-gray-600">{t('completedPhases')}</div>
+            </div>
+            <div className="bg-yellow-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-yellow-600">
+                {ganttData.phases?.filter(p => p.status === 'in_progress').length || 0}
+              </div>
+              <div className="text-sm text-gray-600">{t('inProgressPhases')}</div>
+            </div>
+            <div className="bg-red-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-red-600">
+                {ganttData.phases?.filter(p => p.status === 'delayed').length || 0}
+              </div>
+              <div className="text-sm text-gray-600">{t('delayedPhases')}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Task Detail Modal */}
+      <AnimatePresence>
+        {showTaskModal && selectedTask && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+            onClick={() => setShowTaskModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">📋 {t('taskDetails')}</h3>
+                <button
+                  onClick={() => setShowTaskModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">{t('taskName')}</label>
+                  <div className="mt-1 text-gray-900">{selectedTask.name}</div>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-700">{t('category')}</label>
+                  <div className="mt-1 text-gray-900">{selectedTask.category}</div>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-700">{t('amount')}</label>
+                  <div className="mt-1 text-lg font-semibold text-green-600">€{selectedTask.amount?.toLocaleString()}</div>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-700">{t('status')}</label>
+                  <div className="mt-1 flex items-center">
+                    <div className={`w-3 h-3 rounded-full ${getTaskStatusColor(selectedTask.progress)} mr-2`}></div>
+                    <span className="capitalize">{selectedTask.status}</span>
+                    <span className="ml-2 text-gray-500">({selectedTask.progress}%)</span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">{t('startDate')}</label>
+                    <div className="mt-1 text-gray-900">{formatDate(selectedTask.startDate)}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">{t('endDate')}</label>
+                    <div className="mt-1 text-gray-900">{formatDate(selectedTask.endDate)}</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const LanguageContext = createContext();
+
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
   if (!context) {
