@@ -4215,19 +4215,16 @@ const CostEntry = ({ project, onBack }) => {
         const costEntry = {
           project_id: project.id,
           category_id: formData.category_id,
-          category_name: selectedCategory?.name || 'Unknown',
-          phase_id: formData.phase_id,
-          phase_name: selectedPhase?.name || 'No Phase',
+          phase_id: formData.phase_id || null,
           description: formData.description,
-          cost_type: formData.cost_type,
-          hours: parseFloat(formData.hours) || 0,
-          hourly_rate: parseFloat(formData.hourly_rate) || 0,
-          quantity: parseFloat(formData.quantity) || 0,
-          unit_price: parseFloat(formData.unit_price) || 0,
+          hours: formData.cost_type === 'hourly' ? parseFloat(formData.hours) || 0 : null,
+          hourly_rate: formData.cost_type === 'hourly' ? parseFloat(formData.hourly_rate) || 0 : null,
+          quantity: formData.cost_type === 'material' ? parseFloat(formData.quantity) || 0 : null,
+          unit_price: formData.cost_type === 'material' ? parseFloat(formData.unit_price) || 0 : null,
           total_amount: parseFloat(formData.total_amount) || 0,
           entry_date: formData.entry_date,
           status: formData.status,
-          due_date: formData.due_date
+          due_date: formData.due_date || null
         };
 
         await axios.post(`${API}/api/cost-entries`, costEntry);
