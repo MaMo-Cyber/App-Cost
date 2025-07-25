@@ -86,23 +86,92 @@ def test_initialize_default_categories():
         return False
 
 def test_cost_categories():
-    """Test cost category management"""
-    print("\n🧪 Testing Cost Category Management")
+    """Test cost category management - FOCUS ON DROPDOWN ISSUE"""
+    print("\n🧪 Testing Cost Category Management - FOCUS ON DROPDOWN ISSUE")
     
-    # Get existing categories
+    # Test 1: Get existing categories - this is what frontend dropdowns use
+    print("  🔍 Testing GET /api/cost-categories endpoint (used by frontend dropdowns)...")
     categories, status = make_request('GET', '/cost-categories')
     if status != 200:
-        print("  ❌ Failed to get cost categories")
+        print("  ❌ Failed to get cost categories - THIS IS THE DROPDOWN ISSUE!")
         return False
     
     print(f"  ✅ Retrieved {len(categories)} cost categories")
     
-    # Store category IDs for later use
+    # Test 2: Verify categories have proper structure for frontend dropdowns
+    print("  🔍 Verifying category structure for frontend dropdown compatibility...")
+    if not categories:
+        print("  ❌ NO CATEGORIES FOUND - This explains why dropdowns are empty!")
+        return False
+    
+    # Check first category structure
+    sample_category = categories[0]
+    required_fields = ['id', 'name', 'type']
+    missing_fields = []
+    
+    for field in required_fields:
+        if field not in sample_category:
+            missing_fields.append(field)
+    
+    if missing_fields:
+        print(f"  ❌ Categories missing required fields for dropdowns: {missing_fields}")
+        return False
+    
+    print("  ✅ Categories have correct structure (id, name, type) for dropdowns")
+    
+    # Test 3: Display all available categories for dropdown verification
+    print("  📋 Available categories for frontend dropdowns:")
+    for i, cat in enumerate(categories):
+        print(f"    {i+1}. ID: {cat['id'][:8]}... | Name: '{cat['name']}' | Type: {cat['type']}")
+    
+    # Test 4: Check if we have sufficient categories for meaningful dropdowns
+    if len(categories) < 5:
+        print(f"  ⚠️  WARNING: Only {len(categories)} categories available - may need more for good user experience")
+        
+        # Initialize default categories if too few
+        print("  🔧 Attempting to initialize default categories...")
+        init_result, init_status = make_request('POST', '/initialize-default-categories')
+        if init_status == 200:
+            print("  ✅ Default categories initialized")
+            
+            # Re-fetch categories
+            categories, status = make_request('GET', '/cost-categories')
+            if status == 200:
+                print(f"  ✅ Now have {len(categories)} categories after initialization")
+            else:
+                print("  ❌ Failed to re-fetch categories after initialization")
+                return False
+        else:
+            print("  ❌ Failed to initialize default categories")
+    else:
+        print(f"  ✅ Sufficient categories ({len(categories)}) available for dropdowns")
+    
+    # Test 5: Verify category types for different form contexts
+    print("  🔍 Analyzing category types for different form contexts...")
+    type_counts = {}
+    for cat in categories:
+        cat_type = cat.get('type', 'unknown')
+        type_counts[cat_type] = type_counts.get(cat_type, 0) + 1
+    
+    print("  📊 Category type distribution:")
+    for cat_type, count in type_counts.items():
+        print(f"    {cat_type}: {count} categories")
+    
+    # Test 6: Store category IDs for later use and verify they're valid UUIDs
     if categories:
         test_data['category_ids'] = [cat['id'] for cat in categories[:3]]  # Use first 3
-        print(f"  📝 Stored category IDs: {len(test_data['category_ids'])}")
+        print(f"  📝 Stored {len(test_data['category_ids'])} category IDs for further testing")
+        
+        # Verify IDs are valid (not empty, reasonable length)
+        for i, cat_id in enumerate(test_data['category_ids']):
+            if not cat_id or len(cat_id) < 10:
+                print(f"  ❌ Invalid category ID at index {i}: '{cat_id}'")
+                return False
+        
+        print("  ✅ All category IDs are valid")
     
-    # Create a custom category
+    # Test 7: Create a custom category to verify POST endpoint works
+    print("  🔍 Testing category creation (POST /api/cost-categories)...")
     custom_category = {
         "name": "Testing Equipment",
         "type": "material",
@@ -112,11 +181,32 @@ def test_cost_categories():
     
     new_category, status = make_request('POST', '/cost-categories', custom_category)
     if status == 200 and new_category:
-        print("  ✅ Created custom cost category")
+        print("  ✅ Created custom cost category successfully")
         test_data['category_ids'].append(new_category['id'])
-        return True
+        
+        # Verify the new category appears in GET request
+        updated_categories, status = make_request('GET', '/cost-categories')
+        if status == 200 and len(updated_categories) > len(categories):
+            print("  ✅ New category appears in category list")
+        else:
+            print("  ❌ New category not found in updated list")
+            return False
     else:
         print("  ❌ Failed to create custom category")
+        return False
+    
+    # Test 8: Final verification - categories are ready for frontend dropdowns
+    print("  🎯 FINAL VERIFICATION: Categories ready for frontend dropdowns")
+    final_categories, status = make_request('GET', '/cost-categories')
+    if status == 200 and len(final_categories) >= 5:
+        print(f"  ✅ SUCCESS: {len(final_categories)} categories available for frontend dropdowns")
+        print("  ✅ Categories have proper structure (id, name, type)")
+        print("  ✅ GET /api/cost-categories endpoint working correctly")
+        print("  ✅ This should resolve the dropdown issue in 'Add Costs' and 'Manage Obligations' forms")
+        return True
+    else:
+        print(f"  ❌ ISSUE PERSISTS: Only {len(final_categories) if status == 200 else 0} categories available")
+        print("  ❌ Frontend dropdowns will still be empty")
         return False
 
 def test_project_crud():
