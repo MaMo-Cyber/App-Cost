@@ -2808,6 +2808,7 @@ def run_all_tests():
         ("Project CRUD Operations", test_project_crud),
         ("Phase Management", test_phase_management),
         ("Cost Entry System", test_cost_entries),
+        ("Manual Payment Endpoints", test_manual_payment_endpoints),  # NEW TEST
         ("Project Analytics", test_project_analytics),
         ("Dashboard Data", test_dashboard_data),
         ("Export All Data", test_export_all_data),  # Added the specific test requested
