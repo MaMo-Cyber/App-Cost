@@ -1104,6 +1104,28 @@ async def update_cost_entry_status(entry_id: str, request: Request):
     
     return {"message": "Cost entry status updated"}
 
+@api_router.put("/cost-entries/{entry_id}/amount")
+async def update_cost_entry_amount(entry_id: str, request: Request):
+    # Get amount data from request body
+    try:
+        body = await request.json()
+        total_amount = float(body.get("total_amount", 0))
+        
+        if total_amount <= 0:
+            raise HTTPException(status_code=400, detail="Amount must be greater than 0")
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid amount format")
+    
+    result = await db.cost_entries.update_one(
+        {"id": entry_id}, 
+        {"$set": {"total_amount": total_amount}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Cost entry not found")
+    
+    return {"message": "Cost entry amount updated successfully"}
+
 @api_router.delete("/cost-entries/{entry_id}")
 async def delete_cost_entry(entry_id: str):
     result = await db.cost_entries.delete_one({"id": entry_id})
