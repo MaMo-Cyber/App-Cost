@@ -3170,7 +3170,7 @@ const EditCostEstimates = ({ project, onBack }) => {
   
   const [loading, setLoading] = useState(false);
   const { t } = useLanguage();
-  const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+  const API = process.env.REACT_APP_BACKEND_URL;
 
   // Load existing estimates on component mount
   useEffect(() => {
