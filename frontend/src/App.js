@@ -1150,6 +1150,8 @@ const CostStatusManager = ({ project, onBack }) => {
   const [paidCosts, setPaidCosts] = useState([]);
   const [activeTab, setActiveTab] = useState('outstanding');
   const [loading, setLoading] = useState(true);
+  const [editingCost, setEditingCost] = useState(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -1182,6 +1184,72 @@ const CostStatusManager = ({ project, onBack }) => {
     } catch (error) {
       console.error('Error updating cost status:', error);
       alert('Error updating cost status');
+    }
+  };
+
+  const processManualPayment = async (entryId, originalAmount) => {
+    try {
+      const payment = parseFloat(paymentAmount);
+      const original = parseFloat(originalAmount);
+      
+      if (payment <= 0) {
+        alert('Payment amount must be greater than 0');
+        return;
+      }
+
+      if (payment >= original) {
+        // Payment covers the full amount or more - mark as paid
+        await axios.put(`${API}/cost-entries/${entryId}/status`, 'paid', {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (payment > original) {
+          // Overpayment - excess goes to remaining budget
+          const excess = payment - original;
+          alert(`✅ Payment processed!\n€${original.toLocaleString()} cost marked as paid.\n€${excess.toLocaleString()} excess added to remaining budget.`);
+        } else {
+          alert(`✅ Payment processed! Cost entry fully paid: €${payment.toLocaleString()}`);
+        }
+      } else {
+        // Partial payment - need to split the cost entry
+        const remainingAmount = original - payment;
+        
+        // Mark original as paid with payment amount
+        await axios.put(`${API}/cost-entries/${entryId}/status`, 'paid', {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        // Update the amount to the payment amount
+        await axios.put(`${API}/cost-entries/${entryId}/amount`, { total_amount: payment }, {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        // Create new outstanding entry for remaining amount
+        const costData = outstandingCosts.find(c => c.id === entryId);
+        if (costData) {
+          const newOutstandingEntry = {
+            project_id: project.id,
+            category_id: costData.category_id,
+            phase_id: costData.phase_id || null,
+            description: `${costData.description} - Remaining Balance`,
+            total_amount: remainingAmount,
+            status: 'outstanding',
+            entry_date: costData.entry_date,
+            due_date: costData.due_date || null
+          };
+          
+          await axios.post(`${API}/cost-entries`, newOutstandingEntry);
+        }
+        
+        alert(`✅ Partial payment processed!\n€${payment.toLocaleString()} paid.\n€${remainingAmount.toLocaleString()} remains outstanding.`);
+      }
+      
+      fetchCostsByStatus(); // Refresh the lists
+      setEditingCost(null);
+      setPaymentAmount('');
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      alert('Error processing payment');
     }
   };
 
