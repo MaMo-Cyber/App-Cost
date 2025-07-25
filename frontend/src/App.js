@@ -90,7 +90,7 @@ const GanttChart = ({ project, onBack }) => {
           ...phase,
           startOffset,
           duration,
-          widthPercent: (duration / totalDays) * 100,
+          widthPercent: Math.max(2, (duration / totalDays) * 100), // Minimum 2% width
           leftPercent: (startOffset / totalDays) * 100,
           tasks: tasksData[phase.id] || []
         };
@@ -125,7 +125,7 @@ const GanttChart = ({ project, onBack }) => {
     
     const labels = [];
     const current = new Date(ganttData.projectStart);
-    const step = Math.max(1, Math.floor(ganttData.totalDays / 12)); // Show ~12 labels max
+    const step = Math.max(7, Math.floor(ganttData.totalDays / 8)); // Show ~8 labels max, minimum 7 days apart
     
     for (let i = 0; i <= ganttData.totalDays; i += step) {
       const labelDate = new Date(current);
@@ -134,7 +134,7 @@ const GanttChart = ({ project, onBack }) => {
         date: labelDate,
         label: labelDate.toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', { 
           month: 'short', 
-          day: 'numeric' 
+          day: 'numeric'
         }),
         position: (i / ganttData.totalDays) * 100
       });
@@ -152,189 +152,214 @@ const GanttChart = ({ project, onBack }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm border p-8">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          {/* Compact Header */}
+          <div className="flex items-center justify-between mb-6">
             <div>
               <button
                 onClick={onBack}
-                className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
+                className="flex items-center text-blue-600 hover:text-blue-800 mb-2"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                 </svg>
                 {t('backToDashboard')}
               </button>
-              <h1 className="text-3xl font-bold text-gray-900">
-                📊 {t('ganttChart')} - {project.name}
-              </h1>
-              <p className="text-gray-600 mt-2">
-                {t('projectDuration')}: {formatDate(project.start_date)} - {formatDate(project.end_date)}
-              </p>
+              <h1 className="text-2xl font-bold text-gray-900">📊 {t('ganttChart')}</h1>
+              <p className="text-sm text-gray-600">{project.name}</p>
             </div>
             <div className="text-right">
-              <div className="text-sm text-gray-500 mb-1">{t('totalBudget')}</div>
-              <div className="text-2xl font-bold text-blue-600">€{project.total_budget?.toLocaleString()}</div>
+              <div className="text-lg font-bold text-blue-600">€{project.total_budget?.toLocaleString()}</div>
+              <div className="text-xs text-gray-500">{formatDate(project.start_date)} - {formatDate(project.end_date)}</div>
             </div>
           </div>
 
-          {/* Legend */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-semibold mb-3">📋 {t('legend')}</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div className="flex items-center">
-                <div className="w-4 h-3 bg-green-500 rounded mr-2"></div>
-                <span>{t('completed')}</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-3 bg-blue-500 rounded mr-2"></div>
-                <span>{t('inProgress')}</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-3 bg-red-500 rounded mr-2"></div>
-                <span>{t('delayed')}</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-3 bg-gray-400 rounded mr-2"></div>
-                <span>{t('notStarted')}</span>
-              </div>
+          {/* Compact Legend */}
+          <div className="mb-4 flex flex-wrap items-center gap-4 text-xs">
+            <div className="flex items-center">
+              <div className="w-3 h-2 bg-green-500 rounded mr-1"></div>
+              <span>{t('completed')}</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-2 bg-blue-500 rounded mr-1"></div>
+              <span>{t('inProgress')}</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-2 bg-red-500 rounded mr-1"></div>
+              <span>{t('delayed')}</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-2 bg-gray-400 rounded mr-1"></div>
+              <span>{t('notStarted')}</span>
             </div>
           </div>
 
-          {/* Timeline Header */}
-          <div className="mb-4">
-            <div className="relative h-12 bg-gray-100 rounded-t-lg border-b-2 border-gray-300">
+          {/* Compact Gantt Chart */}
+          <div className="border rounded-lg overflow-hidden">
+            {/* Timeline Header - Much More Compact */}
+            <div className="relative h-6 bg-gray-100 border-b">
               {generateTimelineLabels().map((label, index) => (
                 <div
                   key={index}
-                  className="absolute top-0 h-full flex items-center px-2 text-xs font-medium text-gray-700 border-l border-gray-300"
+                  className="absolute top-0 h-full flex items-center px-1 text-xs text-gray-600 border-l border-gray-300"
                   style={{ left: `${label.position}%` }}
                 >
                   {label.label}
                 </div>
               ))}
             </div>
-          </div>
 
-          {/* Gantt Chart */}
-          <div className="space-y-4">
-            {ganttData.phases?.map((phase) => (
-              <motion.div
-                key={phase.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="border rounded-lg p-4 bg-white shadow-sm"
-              >
-                {/* Phase Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center">
-                    <div className={`w-4 h-4 rounded ${getStatusColor(phase.status)} mr-3`}></div>
-                    <div>
-                      <h3 className="font-semibold text-lg">{phase.name}</h3>
-                      <p className="text-sm text-gray-600">
-                        {formatDate(phase.start_date)} - {formatDate(phase.end_date)}
-                      </p>
+            {/* Compact Phase Bars */}
+            <div className="bg-white">
+              {ganttData.phases?.map((phase, index) => (
+                <div key={phase.id} className="border-b border-gray-100 last:border-b-0">
+                  {/* Phase Row */}
+                  <div className="flex items-center h-12">
+                    {/* Phase Name - Fixed Width */}
+                    <div className="w-64 px-3 py-2 bg-gray-50 border-r flex items-center">
+                      <div className={`w-2 h-2 rounded-full ${getStatusColor(phase.status)} mr-2`}></div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium truncate">{phase.name}</div>
+                        <div className="text-xs text-gray-500">€{phase.budget_allocation?.toLocaleString()}</div>
+                      </div>
+                    </div>
+                    
+                    {/* Timeline Bar Area */}
+                    <div className="flex-1 relative h-12 bg-gray-50">
+                      <div
+                        className={`absolute top-2 h-8 rounded ${getStatusColor(phase.status)} opacity-80 flex items-center px-2`}
+                        style={{
+                          left: `${phase.leftPercent}%`,
+                          width: `${phase.widthPercent}%`,
+                          minWidth: '20px'
+                        }}
+                      >
+                        <span className="text-white text-xs font-medium truncate">{phase.name}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold">€{phase.budget_allocation?.toLocaleString()}</div>
-                    <div className="text-xs text-gray-500 capitalize">{phase.status.replace('_', ' ')}</div>
-                  </div>
                 </div>
+              ))}
+            </div>
 
-                {/* Phase Timeline Bar */}
-                <div className="relative h-8 bg-gray-200 rounded-lg mb-4">
-                  <div
-                    className={`absolute top-0 h-full rounded-lg ${getStatusColor(phase.status)} opacity-80`}
-                    style={{
-                      left: `${phase.leftPercent}%`,
-                      width: `${phase.widthPercent}%`
-                    }}
-                  ></div>
-                  <div
-                    className="absolute top-1/2 transform -translate-y-1/2 text-white text-xs font-medium px-2"
-                    style={{ left: `${phase.leftPercent + 1}%` }}
-                  >
-                    {phase.name}
-                  </div>
-                </div>
-
-                {/* Phase Tasks */}
-                {phase.tasks && phase.tasks.length > 0 && (
-                  <div className="mt-4 pl-6">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">📋 {t('tasks')} ({phase.tasks.length})</h4>
-                    <div className="space-y-2">
-                      {phase.tasks.map((task) => (
-                        <motion.div
-                          key={task.id}
-                          whileHover={{ scale: 1.02 }}
-                          className="flex items-center justify-between p-2 bg-gray-50 rounded cursor-pointer hover:bg-gray-100"
-                          onClick={() => {
-                            setSelectedTask(task);
-                            setShowTaskModal(true);
-                          }}
-                        >
-                          <div className="flex items-center">
-                            <div className={`w-3 h-3 rounded-full ${getTaskStatusColor(task.progress)} mr-3`}></div>
-                            <div>
-                              <div className="text-sm font-medium">{task.name}</div>
-                              <div className="text-xs text-gray-500">{task.category}</div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm font-semibold">€{task.amount?.toLocaleString()}</div>
-                            <div className="text-xs text-gray-500">{task.progress}% {t('complete')}</div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Current Date Indicator */}
-          {ganttData.projectStart && (
-            <div className="relative mt-4">
-              <div
-                className="absolute top-0 w-0.5 h-full bg-red-500 z-10"
+            {/* Current Date Indicator */}
+            {ganttData.projectStart && (
+              <div className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 pointer-events-none"
                 style={{
-                  left: `${((new Date() - ganttData.projectStart) / (1000 * 60 * 60 * 24)) / ganttData.totalDays * 100}%`
+                  left: `calc(256px + ${((new Date() - ganttData.projectStart) / (1000 * 60 * 60 * 24)) / ganttData.totalDays * 100}%)`
                 }}
               >
-                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                  📍 {t('today')}
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs px-1 py-0.5 rounded whitespace-nowrap">
+                  {t('today')}
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Summary Stats */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">{ganttData.phases?.length || 0}</div>
-              <div className="text-sm text-gray-600">{t('totalPhases')}</div>
-            </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">
-                {ganttData.phases?.filter(p => p.status === 'completed').length || 0}
+          {/* Detailed Information Below Chart */}
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold mb-4">📋 {t('detailedInformation')}</h2>
+            
+            {/* Summary Statistics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="text-xl font-bold text-blue-600">{ganttData.phases?.length || 0}</div>
+                <div className="text-sm text-gray-600">{t('totalPhases')}</div>
               </div>
-              <div className="text-sm text-gray-600">{t('completedPhases')}</div>
-            </div>
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-yellow-600">
-                {ganttData.phases?.filter(p => p.status === 'in_progress').length || 0}
+              <div className="bg-green-50 p-3 rounded-lg">
+                <div className="text-xl font-bold text-green-600">
+                  {ganttData.phases?.filter(p => p.status === 'completed').length || 0}
+                </div>
+                <div className="text-sm text-gray-600">{t('completedPhases')}</div>
               </div>
-              <div className="text-sm text-gray-600">{t('inProgressPhases')}</div>
-            </div>
-            <div className="bg-red-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-red-600">
-                {ganttData.phases?.filter(p => p.status === 'delayed').length || 0}
+              <div className="bg-yellow-50 p-3 rounded-lg">
+                <div className="text-xl font-bold text-yellow-600">
+                  {ganttData.phases?.filter(p => p.status === 'in_progress').length || 0}
+                </div>
+                <div className="text-sm text-gray-600">{t('inProgressPhases')}</div>
               </div>
-              <div className="text-sm text-gray-600">{t('delayedPhases')}</div>
+              <div className="bg-red-50 p-3 rounded-lg">
+                <div className="text-xl font-bold text-red-600">
+                  {ganttData.phases?.filter(p => p.status === 'delayed').length || 0}
+                </div>
+                <div className="text-sm text-gray-600">{t('delayedPhases')}</div>
+              </div>
+            </div>
+
+            {/* Detailed Phase and Task Information */}
+            <div className="space-y-6">
+              {ganttData.phases?.map((phase) => (
+                <div key={phase.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center">
+                      <div className={`w-3 h-3 rounded ${getStatusColor(phase.status)} mr-3`}></div>
+                      <div>
+                        <h3 className="font-semibold">{phase.name}</h3>
+                        <p className="text-sm text-gray-600">
+                          {formatDate(phase.start_date)} - {formatDate(phase.end_date)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold">€{phase.budget_allocation?.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500 capitalize">{phase.status.replace('_', ' ')}</div>
+                    </div>
+                  </div>
+
+                  {phase.description && (
+                    <p className="text-sm text-gray-700 mb-4">{phase.description}</p>
+                  )}
+
+                  {/* Tasks Table */}
+                  {phase.tasks && phase.tasks.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-3">
+                        📋 {t('tasks')} ({phase.tasks.length})
+                      </h4>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full text-sm">
+                          <thead>
+                            <tr className="bg-gray-50">
+                              <th className="px-3 py-2 text-left">{t('status')}</th>
+                              <th className="px-3 py-2 text-left">{t('taskName')}</th>
+                              <th className="px-3 py-2 text-left">{t('category')}</th>
+                              <th className="px-3 py-2 text-right">{t('amount')}</th>
+                              <th className="px-3 py-2 text-left">{t('startDate')}</th>
+                              <th className="px-3 py-2 text-left">{t('endDate')}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {phase.tasks.map((task) => (
+                              <tr 
+                                key={task.id} 
+                                className="border-t hover:bg-gray-50 cursor-pointer"
+                                onClick={() => {
+                                  setSelectedTask(task);
+                                  setShowTaskModal(true);
+                                }}
+                              >
+                                <td className="px-3 py-2">
+                                  <div className="flex items-center">
+                                    <div className={`w-2 h-2 rounded-full ${getTaskStatusColor(task.progress)} mr-2`}></div>
+                                    <span className="text-xs">{task.progress}%</span>
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2 font-medium">{task.name}</td>
+                                <td className="px-3 py-2 text-gray-600">{task.category}</td>
+                                <td className="px-3 py-2 text-right font-semibold">€{task.amount?.toLocaleString()}</td>
+                                <td className="px-3 py-2 text-gray-600">{formatDate(task.startDate)}</td>
+                                <td className="px-3 py-2 text-gray-600">{formatDate(task.endDate)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>
