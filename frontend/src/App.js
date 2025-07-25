@@ -4039,7 +4039,7 @@ const CostEntry = ({ project, onBack }) => {
   const [loading, setLoading] = useState(true);
   const [showPaymentSplit, setShowPaymentSplit] = useState(false);
   const { t } = useLanguage();
-  const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+  const API = process.env.REACT_APP_BACKEND_URL;
   
   const [formData, setFormData] = useState({
     category_id: '',
