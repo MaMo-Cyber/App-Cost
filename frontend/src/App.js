@@ -660,6 +660,8 @@ const translations = {
     notStarted: "Not Started",
     tasks: "Tasks",
     complete: "Complete",
+    projectStart: "Project Start",
+    projectEnd: "Project End",
     today: "Today",
     totalPhases: "Total Phases",
     completedPhases: "Completed Phases",
