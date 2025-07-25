@@ -327,6 +327,270 @@ def test_phase_management():
     
     return True
 
+def test_cost_entries_validation_422_diagnosis():
+    """FOCUSED TEST: Diagnose 422 validation error in cost-entries POST endpoint"""
+    print("\n🧪 FOCUSED TEST: Diagnosing 422 Validation Error in Cost-Entries POST")
+    
+    if not test_data['project_id'] or not test_data['category_ids']:
+        print("  ❌ Missing project ID or category IDs for cost entry testing")
+        return False
+    
+    print(f"  📋 Available for testing:")
+    print(f"    Project ID: {test_data['project_id']}")
+    print(f"    Category IDs: {test_data['category_ids'][:3]}")
+    print(f"    Phase IDs: {test_data['phase_ids'][:3] if test_data['phase_ids'] else 'None'}")
+    
+    # TEST 1: Minimal valid request (what frontend likely sends)
+    print("\n  🔍 TEST 1: Minimal valid cost entry (typical frontend request)")
+    minimal_entry = {
+        "project_id": test_data['project_id'],
+        "category_id": test_data['category_ids'][0],
+        "description": "Development work",
+        "hours": 8.0,
+        "hourly_rate": 75.0
+    }
+    
+    print(f"    📤 Sending: {json.dumps(minimal_entry, indent=6)}")
+    entry1, status1 = make_request('POST', '/cost-entries', minimal_entry)
+    print(f"    📥 Response Status: {status1}")
+    
+    if status1 == 422:
+        print("    ❌ 422 ERROR REPRODUCED! This is the issue.")
+        print(f"    📋 Error details: {entry1}")
+        return False
+    elif status1 == 200:
+        print("    ✅ Minimal entry works - issue might be with specific fields")
+        test_data['cost_entry_ids'].append(entry1['id'])
+    else:
+        print(f"    ⚠️  Unexpected status: {status1}")
+    
+    # TEST 2: Test with different field combinations that might cause 422
+    print("\n  🔍 TEST 2: Testing field combinations that might cause 422")
+    
+    # Test with material entry (quantity + unit_price)
+    material_entry = {
+        "project_id": test_data['project_id'],
+        "category_id": test_data['category_ids'][0],
+        "description": "Hardware purchase",
+        "quantity": 2.0,
+        "unit_price": 500.0
+    }
+    
+    print(f"    📤 Material entry: {json.dumps(material_entry, indent=6)}")
+    entry2, status2 = make_request('POST', '/cost-entries', material_entry)
+    print(f"    📥 Response Status: {status2}")
+    
+    if status2 == 422:
+        print("    ❌ 422 ERROR with material entry!")
+        print(f"    📋 Error details: {entry2}")
+    elif status2 == 200:
+        print("    ✅ Material entry works")
+        test_data['cost_entry_ids'].append(entry2['id'])
+    
+    # TEST 3: Test with dates (common source of validation errors)
+    print("\n  🔍 TEST 3: Testing with date fields (common 422 cause)")
+    
+    date_entry = {
+        "project_id": test_data['project_id'],
+        "category_id": test_data['category_ids'][0],
+        "description": "Work with specific dates",
+        "hours": 4.0,
+        "hourly_rate": 85.0,
+        "entry_date": "2024-07-22",
+        "due_date": "2024-08-22",
+        "status": "outstanding"
+    }
+    
+    print(f"    📤 Date entry: {json.dumps(date_entry, indent=6)}")
+    entry3, status3 = make_request('POST', '/cost-entries', date_entry)
+    print(f"    📥 Response Status: {status3}")
+    
+    if status3 == 422:
+        print("    ❌ 422 ERROR with date fields!")
+        print(f"    📋 Error details: {entry3}")
+    elif status3 == 200:
+        print("    ✅ Date entry works")
+        test_data['cost_entry_ids'].append(entry3['id'])
+    
+    # TEST 4: Test with phase_id (optional field)
+    print("\n  🔍 TEST 4: Testing with phase_id (optional field)")
+    
+    phase_entry = {
+        "project_id": test_data['project_id'],
+        "phase_id": test_data['phase_ids'][0] if test_data['phase_ids'] else None,
+        "category_id": test_data['category_ids'][0],
+        "description": "Phase-specific work",
+        "hours": 6.0,
+        "hourly_rate": 90.0
+    }
+    
+    print(f"    📤 Phase entry: {json.dumps(phase_entry, indent=6)}")
+    entry4, status4 = make_request('POST', '/cost-entries', phase_entry)
+    print(f"    📥 Response Status: {status4}")
+    
+    if status4 == 422:
+        print("    ❌ 422 ERROR with phase_id!")
+        print(f"    📋 Error details: {entry4}")
+    elif status4 == 200:
+        print("    ✅ Phase entry works")
+        test_data['cost_entry_ids'].append(entry4['id'])
+    
+    # TEST 5: Test with total_amount provided (manual override)
+    print("\n  🔍 TEST 5: Testing with manual total_amount")
+    
+    manual_total_entry = {
+        "project_id": test_data['project_id'],
+        "category_id": test_data['category_ids'][0],
+        "description": "Fixed cost entry",
+        "total_amount": 1500.0
+    }
+    
+    print(f"    📤 Manual total: {json.dumps(manual_total_entry, indent=6)}")
+    entry5, status5 = make_request('POST', '/cost-entries', manual_total_entry)
+    print(f"    📥 Response Status: {status5}")
+    
+    if status5 == 422:
+        print("    ❌ 422 ERROR with manual total_amount!")
+        print(f"    📋 Error details: {entry5}")
+    elif status5 == 200:
+        print("    ✅ Manual total entry works")
+        test_data['cost_entry_ids'].append(entry5['id'])
+    
+    # TEST 6: Test invalid combinations that SHOULD cause 422
+    print("\n  🔍 TEST 6: Testing invalid combinations (should cause 422)")
+    
+    # Missing calculation fields
+    invalid_entry1 = {
+        "project_id": test_data['project_id'],
+        "category_id": test_data['category_ids'][0],
+        "description": "Invalid - no calculation fields"
+        # Missing hours/rate, quantity/price, and total_amount
+    }
+    
+    print(f"    📤 Invalid entry (no calc fields): {json.dumps(invalid_entry1, indent=6)}")
+    invalid1, invalid_status1 = make_request('POST', '/cost-entries', invalid_entry1)
+    print(f"    📥 Response Status: {invalid_status1}")
+    
+    if invalid_status1 == 422:
+        print("    ✅ Correctly rejected invalid entry (422 expected)")
+        print(f"    📋 Expected error: {invalid1}")
+    else:
+        print(f"    ⚠️  Expected 422 but got {invalid_status1}")
+    
+    # Invalid project_id
+    invalid_entry2 = {
+        "project_id": "invalid-project-id",
+        "category_id": test_data['category_ids'][0],
+        "description": "Invalid project ID",
+        "hours": 8.0,
+        "hourly_rate": 75.0
+    }
+    
+    print(f"    📤 Invalid project ID: {json.dumps(invalid_entry2, indent=6)}")
+    invalid2, invalid_status2 = make_request('POST', '/cost-entries', invalid_entry2)
+    print(f"    📥 Response Status: {invalid_status2}")
+    
+    if invalid_status2 in [404, 422]:
+        print("    ✅ Correctly rejected invalid project ID")
+    else:
+        print(f"    ⚠️  Expected 404/422 but got {invalid_status2}")
+    
+    # Invalid category_id
+    invalid_entry3 = {
+        "project_id": test_data['project_id'],
+        "category_id": "invalid-category-id",
+        "description": "Invalid category ID",
+        "hours": 8.0,
+        "hourly_rate": 75.0
+    }
+    
+    print(f"    📤 Invalid category ID: {json.dumps(invalid_entry3, indent=6)}")
+    invalid3, invalid_status3 = make_request('POST', '/cost-entries', invalid_entry3)
+    print(f"    📥 Response Status: {invalid_status3}")
+    
+    if invalid_status3 in [404, 422]:
+        print("    ✅ Correctly rejected invalid category ID")
+    else:
+        print(f"    ⚠️  Expected 404/422 but got {invalid_status3}")
+    
+    # TEST 7: Test edge cases that might cause 422
+    print("\n  🔍 TEST 7: Testing edge cases")
+    
+    # Zero values
+    zero_entry = {
+        "project_id": test_data['project_id'],
+        "category_id": test_data['category_ids'][0],
+        "description": "Zero hours test",
+        "hours": 0.0,
+        "hourly_rate": 75.0
+    }
+    
+    print(f"    📤 Zero hours: {json.dumps(zero_entry, indent=6)}")
+    zero_result, zero_status = make_request('POST', '/cost-entries', zero_entry)
+    print(f"    📥 Response Status: {zero_status}")
+    
+    if zero_status == 422:
+        print("    ❌ 422 ERROR with zero hours!")
+        print(f"    📋 Error details: {zero_result}")
+    elif zero_status == 200:
+        print("    ✅ Zero hours accepted")
+        test_data['cost_entry_ids'].append(zero_result['id'])
+    
+    # Negative values
+    negative_entry = {
+        "project_id": test_data['project_id'],
+        "category_id": test_data['category_ids'][0],
+        "description": "Negative rate test",
+        "hours": 8.0,
+        "hourly_rate": -75.0
+    }
+    
+    print(f"    📤 Negative rate: {json.dumps(negative_entry, indent=6)}")
+    neg_result, neg_status = make_request('POST', '/cost-entries', negative_entry)
+    print(f"    📥 Response Status: {neg_status}")
+    
+    if neg_status == 422:
+        print("    ✅ Correctly rejected negative rate (422 expected)")
+    elif neg_status == 200:
+        print("    ⚠️  Negative rate accepted (might be intentional)")
+        test_data['cost_entry_ids'].append(neg_result['id'])
+    
+    # SUMMARY
+    print("\n  📊 422 VALIDATION ERROR DIAGNOSIS SUMMARY:")
+    
+    test_results = [
+        ("Minimal entry", status1),
+        ("Material entry", status2), 
+        ("Date entry", status3),
+        ("Phase entry", status4),
+        ("Manual total", status5),
+        ("Zero hours", zero_status),
+        ("Negative rate", neg_status)
+    ]
+    
+    successful_tests = [name for name, status in test_results if status == 200]
+    failed_tests = [name for name, status in test_results if status == 422]
+    
+    print(f"    ✅ Successful requests: {len(successful_tests)}")
+    for name in successful_tests:
+        print(f"      - {name}")
+    
+    print(f"    ❌ 422 Validation errors: {len(failed_tests)}")
+    for name in failed_tests:
+        print(f"      - {name}")
+    
+    if len(failed_tests) > 0:
+        print("\n  🔧 RECOMMENDATIONS TO FIX 422 ERRORS:")
+        print("    1. Check frontend is sending all required fields")
+        print("    2. Verify data types match backend expectations")
+        print("    3. Ensure calculation fields are provided (hours+rate OR quantity+price OR total_amount)")
+        print("    4. Check date format is YYYY-MM-DD string")
+        print("    5. Verify project_id and category_id exist in database")
+        return False
+    else:
+        print("\n  ✅ NO 422 ERRORS FOUND - Cost entry endpoint working correctly")
+        return True
+
 def test_cost_entries():
     """Test cost entry system with calculations and date serialization fix"""
     print("\n🧪 Testing Cost Entry System with Date Serialization")
