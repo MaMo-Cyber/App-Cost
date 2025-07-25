@@ -1295,6 +1295,18 @@ async def export_all_data():
         # Get all cost entries
         cost_entries = await db.cost_entries.find().to_list(1000)
         
+        # Remove MongoDB _id fields to avoid serialization issues
+        def clean_document(doc):
+            if isinstance(doc, dict) and "_id" in doc:
+                del doc["_id"]
+            return doc
+        
+        # Clean all documents
+        projects = [clean_document(project) for project in projects]
+        categories = [clean_document(category) for category in categories]
+        phases = [clean_document(phase) for phase in phases]
+        cost_entries = [clean_document(entry) for entry in cost_entries]
+        
         # Create backup data structure
         backup_data = {
             "export_date": datetime.utcnow().isoformat(),
