@@ -52,6 +52,7 @@ const translations = {
     addCosts: "Add Costs",
     paymentStatus: "Payment Status",
     paymentTimeline: "Payment Timeline",
+    ganttChart: "Gantt Chart",
     manageCategories: "Manage Categories",
     managePhases: "Manage Phases",
     editCostEstimates: "Edit Cost Estimates",
