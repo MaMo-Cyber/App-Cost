@@ -3696,7 +3696,7 @@ const ObligationManager = ({ project, onBack }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API}/obligations`, {
+      await axios.post(`${API}/api/obligations`, {
         project_id: project.id,
         ...formData,
         amount: parseFloat(formData.amount)
