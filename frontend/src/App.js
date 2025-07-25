@@ -636,6 +636,7 @@ const translations = {
     startDate: "Start Date",
     endDate: "End Date",
     projectDuration: "Project Duration",
+    detailedInformation: "Detailed Information",
     costEur: "Cost (€)",
     evmPerformanceOverTime: "EVM Performance Over Time",
     budgetAllocated: "Budget Allocated",
