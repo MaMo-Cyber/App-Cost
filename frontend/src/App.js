@@ -3684,7 +3684,7 @@ const ObligationManager = ({ project, onBack }) => {
   
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(`${API}/cost-categories`);
+      const response = await axios.get(`${API}/api/cost-categories`);
       setCategories(response.data);
       setLoading(false);
     } catch (error) {
