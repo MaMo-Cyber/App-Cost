@@ -4246,7 +4246,7 @@ const CostEntry = ({ project, onBack }) => {
             vendor_supplier: ''
           };
 
-          await axios.post(`${API}/obligations`, obligationData);
+          await axios.post(`${API}/api/obligations`, obligationData);
         }
       }
 
