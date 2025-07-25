@@ -254,6 +254,7 @@ const translations = {
     addCosts: "Kosten hinzufügen",
     paymentStatus: "Zahlungsstatus",
     paymentTimeline: "Zahlungszeitplan",
+    ganttChart: "Gantt-Diagramm",
     manageCategories: "Kategorien verwalten",
     managePhases: "Phasen verwalten",
     editCostEstimates: "Kostenschätzungen bearbeiten",
