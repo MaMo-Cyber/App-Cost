@@ -3735,7 +3735,7 @@ const ObligationManager = ({ project, onBack }) => {
   const deleteObligation = async (obligationId) => {
     if (window.confirm('Are you sure you want to delete this obligation?')) {
       try {
-        await axios.delete(`${API}/obligations/${obligationId}`);
+        await axios.delete(`${API}/api/obligations/${obligationId}`);
         fetchObligations();
         alert('Obligation deleted successfully!');
       } catch (error) {
