@@ -4230,7 +4230,7 @@ const CostEntry = ({ project, onBack }) => {
           due_date: formData.due_date
         };
 
-        await axios.post(`${API}/cost-entries`, costEntry);
+        await axios.post(`${API}/api/cost-entries`, costEntry);
 
         // Create obligation for outstanding costs
         if (formData.status === 'outstanding' && parseFloat(formData.total_amount) > 0) {
