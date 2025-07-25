@@ -4032,7 +4032,589 @@ const ObligationManager = ({ project, onBack }) => {
   );
 };
 
-// Cost Entry Component (unchanged)
+// Enhanced Cost Entry Component with Payment Splitting and Automatic Obligation Creation
+const CostEntry = ({ project, onBack }) => {
+  const [categories, setCategories] = useState([]);
+  const [phases, setPhases] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showPaymentSplit, setShowPaymentSplit] = useState(false);
+  const { t } = useLanguage();
+  const API = process.env.REACT_APP_BACKEND_URL;
+  
+  const [formData, setFormData] = useState({
+    category_id: '',
+    phase_id: '',
+    description: '',
+    hours: '',
+    hourly_rate: '',
+    quantity: '',
+    unit_price: '',
+    total_amount: '',
+    entry_date: new Date().toISOString().split('T')[0],
+    status: 'outstanding',
+    due_date: '',
+    cost_type: 'hourly' // hourly, material, fixed
+  });
+
+  // Payment splitting state
+  const [paymentSplits, setPaymentSplits] = useState([
+    { percentage: 100, amount: 0, payment_date: new Date().toISOString().split('T')[0], status: 'outstanding', description: 'Full payment' }
+  ]);
+
+  useEffect(() => {
+    fetchCategories();
+    fetchPhases();
+  }, []);
+
+  // Update payment splits when total amount changes
+  useEffect(() => {
+    if (formData.total_amount) {
+      const totalAmount = parseFloat(formData.total_amount) || 0;
+      setPaymentSplits(splits => 
+        splits.map(split => ({
+          ...split,
+          amount: (totalAmount * split.percentage / 100)
+        }))
+      );
+    }
+  }, [formData.total_amount]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(`${API}/cost-categories`);
+      setCategories(response.data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const fetchPhases = async () => {
+    try {
+      const response = await axios.get(`${API}/projects/${project.id}/phases`);
+      setPhases(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching phases:', error);
+      setLoading(false);
+    }
+  };
+
+  const calculateTotal = () => {
+    if (formData.cost_type === 'hourly') {
+      const hours = parseFloat(formData.hours) || 0;
+      const rate = parseFloat(formData.hourly_rate) || 0;
+      return hours * rate;
+    } else if (formData.cost_type === 'material') {
+      const quantity = parseFloat(formData.quantity) || 0;
+      const price = parseFloat(formData.unit_price) || 0;
+      return quantity * price;
+    } else {
+      return parseFloat(formData.total_amount) || 0;
+    }
+  };
+
+  // Update total when relevant fields change
+  useEffect(() => {
+    const newTotal = calculateTotal();
+    if (newTotal !== parseFloat(formData.total_amount)) {
+      setFormData(prev => ({ ...prev, total_amount: newTotal.toString() }));
+    }
+  }, [formData.hours, formData.hourly_rate, formData.quantity, formData.unit_price, formData.cost_type]);
+
+  const addPaymentSplit = () => {
+    setPaymentSplits([...paymentSplits, {
+      percentage: 0,
+      amount: 0,
+      payment_date: new Date().toISOString().split('T')[0],
+      status: 'outstanding',
+      description: 'Additional payment'
+    }]);
+  };
+
+  const updatePaymentSplit = (index, field, value) => {
+    const newSplits = [...paymentSplits];
+    newSplits[index][field] = value;
+    
+    // Update amount when percentage changes
+    if (field === 'percentage') {
+      const totalAmount = parseFloat(formData.total_amount) || 0;
+      newSplits[index].amount = (totalAmount * value / 100);
+    }
+    
+    setPaymentSplits(newSplits);
+  };
+
+  const removePaymentSplit = (index) => {
+    if (paymentSplits.length > 1) {
+      setPaymentSplits(paymentSplits.filter((_, i) => i !== index));
+    }
+  };
+
+  const getTotalPercentage = () => {
+    return paymentSplits.reduce((sum, split) => sum + (parseFloat(split.percentage) || 0), 0);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validate payment splits
+    const totalPercentage = getTotalPercentage();
+    if (Math.abs(totalPercentage - 100) > 0.01) {
+      alert(`Payment splits must total 100%. Current total: ${totalPercentage.toFixed(1)}%`);
+      return;
+    }
+
+    try {
+      const selectedCategory = categories.find(cat => cat.id === formData.category_id);
+      const selectedPhase = phases.find(phase => phase.id === formData.phase_id);
+      
+      if (showPaymentSplit && paymentSplits.length > 1) {
+        // Create multiple cost entries for payment splits
+        for (let i = 0; i < paymentSplits.length; i++) {
+          const split = paymentSplits[i];
+          
+          const splitEntry = {
+            project_id: project.id,
+            category_id: formData.category_id,
+            category_name: selectedCategory?.name || 'Unknown',
+            phase_id: formData.phase_id,
+            phase_name: selectedPhase?.name || 'No Phase',
+            description: `${formData.description} - ${split.description} (${split.percentage}%)`,
+            cost_type: formData.cost_type,
+            hours: formData.cost_type === 'hourly' ? (parseFloat(formData.hours) * split.percentage / 100) : 0,
+            hourly_rate: parseFloat(formData.hourly_rate) || 0,
+            quantity: formData.cost_type === 'material' ? (parseFloat(formData.quantity) * split.percentage / 100) : 0,
+            unit_price: parseFloat(formData.unit_price) || 0,
+            total_amount: split.amount,
+            entry_date: formData.entry_date,
+            status: split.status,
+            due_date: split.payment_date
+          };
+
+          await axios.post(`${API}/cost-entries`, splitEntry);
+
+          // Create obligation for outstanding payments
+          if (split.status === 'outstanding' && split.amount > 0) {
+            const obligationData = {
+              project_id: project.id,
+              category_id: formData.category_id,
+              description: `Cost obligation: ${formData.description} - ${split.description}`,
+              amount: split.amount,
+              expected_incur_date: split.payment_date,
+              confidence_level: 'high', // High confidence as it's a confirmed cost
+              priority: 'normal',
+              contract_reference: `COST-${Date.now()}-${i}`,
+              vendor_supplier: ''
+            };
+
+            await axios.post(`${API}/obligations`, obligationData);
+          }
+        }
+      } else {
+        // Single cost entry
+        const costEntry = {
+          project_id: project.id,
+          category_id: formData.category_id,
+          category_name: selectedCategory?.name || 'Unknown',
+          phase_id: formData.phase_id,
+          phase_name: selectedPhase?.name || 'No Phase',
+          description: formData.description,
+          cost_type: formData.cost_type,
+          hours: parseFloat(formData.hours) || 0,
+          hourly_rate: parseFloat(formData.hourly_rate) || 0,
+          quantity: parseFloat(formData.quantity) || 0,
+          unit_price: parseFloat(formData.unit_price) || 0,
+          total_amount: parseFloat(formData.total_amount) || 0,
+          entry_date: formData.entry_date,
+          status: formData.status,
+          due_date: formData.due_date
+        };
+
+        await axios.post(`${API}/cost-entries`, costEntry);
+
+        // Create obligation for outstanding costs
+        if (formData.status === 'outstanding' && parseFloat(formData.total_amount) > 0) {
+          const obligationData = {
+            project_id: project.id,
+            category_id: formData.category_id,
+            description: `Cost obligation: ${formData.description}`,
+            amount: parseFloat(formData.total_amount),
+            expected_incur_date: formData.due_date || new Date().toISOString().split('T')[0],
+            confidence_level: 'high', // High confidence as it's a confirmed cost
+            priority: 'normal',
+            contract_reference: `COST-${Date.now()}`,
+            vendor_supplier: ''
+          };
+
+          await axios.post(`${API}/obligations`, obligationData);
+        }
+      }
+
+      alert('✅ Cost entry created successfully! Outstanding costs automatically added to obligations.');
+      onBack();
+    } catch (error) {
+      console.error('Error creating cost entry:', error);
+      alert('❌ Error creating cost entry. Please try again.');
+    }
+  };
+
+  if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border p-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">{t('addCosts')}</h2>
+              <p className="text-gray-600">Add new cost entry for {project.name}</p>
+            </div>
+            <button
+              onClick={onBack}
+              className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              ← {t('backToDashboard')}
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Basic Cost Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('costCategory')}</label>
+                <select
+                  value={formData.category_id}
+                  onChange={(e) => setFormData({...formData, category_id: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="">Select category...</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>{category.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phase</label>
+                <select
+                  value={formData.phase_id}
+                  onChange={(e) => setFormData({...formData, phase_id: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">No specific phase</option>
+                  {phases.map(phase => (
+                    <option key={phase.id} value={phase.id}>{phase.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('description')}</label>
+              <input
+                type="text"
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Cost description..."
+                required
+              />
+            </div>
+
+            {/* Cost Type Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Cost Type</label>
+              <div className="flex space-x-4">
+                {['hourly', 'material', 'fixed'].map(type => (
+                  <label key={type} className="flex items-center">
+                    <input
+                      type="radio"
+                      value={type}
+                      checked={formData.cost_type === type}
+                      onChange={(e) => setFormData({...formData, cost_type: e.target.value})}
+                      className="mr-2"
+                    />
+                    <span className="capitalize">{type}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Dynamic Cost Fields */}
+            {formData.cost_type === 'hourly' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('hours')}</label>
+                  <input
+                    type="number"
+                    step="0.25"
+                    value={formData.hours}
+                    onChange={(e) => setFormData({...formData, hours: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('hourlyRate')}</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.hourly_rate}
+                    onChange={(e) => setFormData({...formData, hourly_rate: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('totalAmount')}</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.total_amount}
+                    readOnly
+                    className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            )}
+
+            {formData.cost_type === 'material' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('quantity')}</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({...formData, quantity: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('unitPrice')}</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.unit_price}
+                    onChange={(e) => setFormData({...formData, unit_price: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('totalAmount')}</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.total_amount}
+                    readOnly
+                    className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            )}
+
+            {formData.cost_type === 'fixed' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('totalAmount')}</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.total_amount}
+                  onChange={(e) => setFormData({...formData, total_amount: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+            )}
+
+            {/* Payment Splitting Option */}
+            <div className="border-t pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={showPaymentSplit}
+                    onChange={(e) => setShowPaymentSplit(e.target.checked)}
+                    className="mr-2"
+                  />
+                  <span className="font-medium text-gray-700">Split Payment Schedule</span>
+                </label>
+                <span className="text-sm text-gray-500">Split costs into multiple payments with different dates</span>
+              </div>
+
+              {showPaymentSplit && (
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-blue-900">Payment Schedule</h4>
+                    <button
+                      type="button"
+                      onClick={addPaymentSplit}
+                      className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                    >
+                      + Add Payment
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {paymentSplits.map((split, index) => (
+                      <div key={index} className="grid grid-cols-12 gap-2 items-center bg-white p-3 rounded border">
+                        <div className="col-span-3">
+                          <input
+                            type="text"
+                            value={split.description}
+                            onChange={(e) => updatePaymentSplit(index, 'description', e.target.value)}
+                            className="w-full p-2 border rounded text-sm"
+                            placeholder="Payment description"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={split.percentage}
+                            onChange={(e) => updatePaymentSplit(index, 'percentage', parseFloat(e.target.value) || 0)}
+                            className="w-full p-2 border rounded text-sm"
+                            placeholder="%"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <input
+                            type="text"
+                            value={`€${split.amount.toFixed(2)}`}
+                            readOnly
+                            className="w-full p-2 border rounded text-sm bg-gray-50"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <input
+                            type="date"
+                            value={split.payment_date}
+                            onChange={(e) => updatePaymentSplit(index, 'payment_date', e.target.value)}
+                            className="w-full p-2 border rounded text-sm"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <select
+                            value={split.status}
+                            onChange={(e) => updatePaymentSplit(index, 'status', e.target.value)}
+                            className="w-full p-2 border rounded text-sm"
+                          >
+                            <option value="outstanding">Outstanding</option>
+                            <option value="paid">Paid</option>
+                          </select>
+                        </div>
+                        <div className="col-span-1">
+                          {paymentSplits.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removePaymentSplit(index)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-3 p-2 bg-gray-100 rounded">
+                    <div className="flex justify-between text-sm">
+                      <span>Total Percentage:</span>
+                      <span className={`font-bold ${Math.abs(getTotalPercentage() - 100) < 0.01 ? 'text-green-600' : 'text-red-600'}`}>
+                        {getTotalPercentage().toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Standard Payment Fields (when not using splits) */}
+            {!showPaymentSplit && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Entry Date</label>
+                  <input
+                    type="date"
+                    value={formData.entry_date}
+                    onChange={(e) => setFormData({...formData, entry_date: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Payment Status</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="outstanding">Outstanding</option>
+                    <option value="paid">Paid</option>
+                  </select>
+                </div>
+
+                {formData.status === 'outstanding' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+                    <input
+                      type="date"
+                      value={formData.due_date}
+                      onChange={(e) => setFormData({...formData, due_date: e.target.value})}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Submit Buttons */}
+            <div className="flex justify-end space-x-4 pt-6 border-t">
+              <button
+                type="button"
+                onClick={onBack}
+                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                {t('save')} Cost Entry
+              </button>
+            </div>
+          </form>
+
+          {/* Information Box */}
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start space-x-2">
+              <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <div className="text-sm text-blue-800">
+                <p className="font-semibold mb-1">Automatic Obligation Management</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Outstanding costs are automatically added to "Manage Obligations" with high confidence level</li>
+                  <li>Payment splits create separate cost entries and obligations for each outstanding payment</li>
+                  <li>Obligations help track committed costs for better EVM forecasting</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 const CostEntry = ({ project, onBack }) => {
   const { t } = useLanguage();
   const [categories, setCategories] = useState([]);
