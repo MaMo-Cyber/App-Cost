@@ -149,6 +149,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "✅ COMPREHENSIVE TESTING COMPLETED: Cost category management working perfectly. Successfully initialized 6 default categories (Internal Hours, External Hours, Materials, Mechanical Costs, Software Licenses, Travel & Expenses). Retrieved all categories correctly (9 total after testing). Created custom 'Testing Equipment' category with material type. All category operations functional with proper type validation."
+        - working: true
+          agent: "testing"
+          comment: "✅ DROPDOWN ISSUE INVESTIGATION COMPLETED: Comprehensive testing of GET /api/cost-categories endpoint confirms it's working perfectly for frontend dropdowns. Found 37 categories available with proper structure (id, name, type fields). Categories include: 11 hourly types, 20 material types, 5 fixed types. All required fields present for dropdown population. API returns correct JSON format with valid UUIDs. CORS headers working correctly. Both cost entry and obligation creation successfully use categories. Backend API is NOT the cause of empty dropdowns - issue must be in frontend integration or data fetching logic."
 
   - task: "Cost entry system with calculations"
     implemented: true
