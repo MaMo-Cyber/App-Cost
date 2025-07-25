@@ -4176,19 +4176,16 @@ const CostEntry = ({ project, onBack }) => {
           const splitEntry = {
             project_id: project.id,
             category_id: formData.category_id,
-            category_name: selectedCategory?.name || 'Unknown',
-            phase_id: formData.phase_id,
-            phase_name: selectedPhase?.name || 'No Phase',
+            phase_id: formData.phase_id || null,
             description: `${formData.description} - ${split.description} (${split.percentage}%)`,
-            cost_type: formData.cost_type,
-            hours: formData.cost_type === 'hourly' ? (parseFloat(formData.hours) * split.percentage / 100) : 0,
-            hourly_rate: parseFloat(formData.hourly_rate) || 0,
-            quantity: formData.cost_type === 'material' ? (parseFloat(formData.quantity) * split.percentage / 100) : 0,
-            unit_price: parseFloat(formData.unit_price) || 0,
+            hours: formData.cost_type === 'hourly' ? (parseFloat(formData.hours) * split.percentage / 100) : null,
+            hourly_rate: formData.cost_type === 'hourly' ? parseFloat(formData.hourly_rate) || 0 : null,
+            quantity: formData.cost_type === 'material' ? (parseFloat(formData.quantity) * split.percentage / 100) : null,
+            unit_price: formData.cost_type === 'material' ? parseFloat(formData.unit_price) || 0 : null,
             total_amount: split.amount,
             entry_date: formData.entry_date,
             status: split.status,
-            due_date: split.payment_date
+            due_date: split.payment_date || null
           };
 
           await axios.post(`${API}/api/cost-entries`, splitEntry);
