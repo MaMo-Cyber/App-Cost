@@ -2787,17 +2787,51 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
                         }
                       }
                     },
-                    annotation: dashboardData.evm_timeline?.overrun_point ? {
+                    annotation: {
                       annotations: {
-                        overrunLine: {
+                        // Current date marker
+                        currentDate: {
                           type: 'line',
-                          xMin: dashboardData.evm_timeline.overrun_point.month_number - 1,
-                          xMax: dashboardData.evm_timeline.overrun_point.month_number - 1,
-                          borderColor: 'rgb(239, 68, 68)',
-                          borderWidth: 4,
-                          borderDash: [10, 5],
+                          xMin: (() => {
+                            const now = new Date();
+                            const projectStart = new Date(project.start_date);
+                            const monthsFromStart = (now.getFullYear() - projectStart.getFullYear()) * 12 + (now.getMonth() - projectStart.getMonth());
+                            return Math.max(0, monthsFromStart);
+                          })(),
+                          xMax: (() => {
+                            const now = new Date();
+                            const projectStart = new Date(project.start_date);
+                            const monthsFromStart = (now.getFullYear() - projectStart.getFullYear()) * 12 + (now.getMonth() - projectStart.getMonth());
+                            return Math.max(0, monthsFromStart);
+                          })(),
+                          borderColor: 'rgb(34, 197, 94)',
+                          borderWidth: 3,
+                          borderDash: [5, 5],
                           label: {
-                            content: `⚠️ ${t('costOverrunPredicted')} (${language === 'de' ? 'Monat' : 'Month'} ${dashboardData.evm_timeline.overrun_point.month_number})`,
+                            content: `📍 ${t('currentDate')} (${new Date().toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US')})`,
+                            enabled: true,
+                            position: 'start',
+                            backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                            color: 'white',
+                            font: {
+                              weight: 'bold',
+                              size: 11
+                            },
+                            padding: 6,
+                            yAdjust: -20
+                          }
+                        },
+                        // Cost overrun prediction (if exists)
+                        ...(dashboardData.evm_timeline?.overrun_point ? {
+                          overrunLine: {
+                            type: 'line',
+                            xMin: dashboardData.evm_timeline.overrun_point.month_number - 1,
+                            xMax: dashboardData.evm_timeline.overrun_point.month_number - 1,
+                            borderColor: 'rgb(239, 68, 68)',
+                            borderWidth: 4,
+                            borderDash: [10, 5],
+                            label: {
+                              content: `⚠️ ${t('costOverrunPredicted')} (${language === 'de' ? 'Monat' : 'Month'} ${dashboardData.evm_timeline.overrun_point.month_number})`,
                             enabled: true,
                             position: 'start',
                             backgroundColor: 'rgba(239, 68, 68, 0.8)',
