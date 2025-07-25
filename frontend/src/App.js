@@ -404,6 +404,7 @@ const translations = {
     budgetAllocated: "Budget zugeteilt",
     amountSpent: "Ausgegeben",
     remainingActual: "Verbleibend (Aktuell)",
+    currentDate: "Aktuelles Datum",
     monthlySpendingTrend: "Monatlicher Ausgabentrend",
     costBreakdownByCategory: "Kostenaufschlüsselung nach Kategorie",
     
