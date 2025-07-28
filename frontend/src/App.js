@@ -3299,39 +3299,32 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
             </div>
           </div>
         </div>
-              <p className="text-xs text-gray-500">After all commitments</p>
+        {/* Charts Section - Financial Analysis */}
+        <div className="mb-8">
+          <div className="flex items-center mb-4">
+            <div className="p-2 bg-green-100 rounded-lg mr-3">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
             </div>
+            <h2 className="text-xl font-bold text-gray-900">📊 {t('financialAnalysis')}</h2>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-yellow-200 bg-yellow-50">
-            <div className="text-center">
-              <div className="mx-auto p-2 bg-yellow-100 rounded-lg w-fit mb-3">
-                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Monthly Spending Trend */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">📈 {t('monthlySpendingTrend')}</h3>
+              <div className="h-64">
+                <Line data={trendLineData} options={chartOptions} />
               </div>
-              <p className="text-sm font-medium text-yellow-700">Available (If Paid)</p>
-              <p className="text-2xl font-semibold text-yellow-800">€{summary.budget_remaining_committed.toLocaleString()}</p>
-              <p className="text-xs text-yellow-600">Excluding outstanding</p>
             </div>
-          </div>
-        </div>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Monthly Spending Trend */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">📈 {t('monthlySpendingTrend')}</h3>
-            <div className="h-64">
-              <Line data={trendLineData} options={chartOptions} />
-            </div>
-          </div>
-
-          {/* Budget Analysis */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">💰 {t('budgetAnalysis')}</h3>
-            <div className="h-64">
-              <Bar data={budgetComparisonData} options={chartOptions} />
+            {/* Budget Analysis */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">💰 {t('budgetAnalysis')}</h3>
+              <div className="h-64">
+                <Bar data={budgetComparisonData} options={chartOptions} />
+              </div>
             </div>
           </div>
         </div>
