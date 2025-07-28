@@ -5430,7 +5430,7 @@ const CostEntry = ({ project, onBack }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('milestone')}</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('milestones')}</label>
                 <select
                   value={formData.milestone_id}
                   onChange={(e) => setFormData({...formData, milestone_id: e.target.value})}
