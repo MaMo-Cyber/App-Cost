@@ -3597,6 +3597,66 @@ def run_database_cleanup():
         print(f"\n💥 DATABASE CLEANUP ERROR: {str(e)}")
         return False
 
+def run_milestone_cost_linking_tests():
+    """Run focused tests for milestone-cost linking functionality as requested in review"""
+    print("🚀 Starting Milestone-Cost Linking Functionality Testing")
+    print("=" * 60)
+    print("🎯 FOCUS: Testing milestone-cost linking and automatic date synchronization")
+    print("=" * 60)
+    
+    # Test functions to run based on review request
+    test_functions = [
+        ("API Root", test_api_root),
+        ("Category Management CRUD", test_category_management_crud),
+        ("Project CRUD", test_project_crud),
+        ("Phase Management", test_phase_management),
+        ("Milestone-Cost Linking", test_milestone_cost_linking),
+        ("Cost Categories", test_cost_categories),
+        ("Cost Entries", test_cost_entries),
+        ("Project Analytics", test_project_analytics),
+        ("Dashboard Data", test_dashboard_data),
+    ]
+    
+    # Test results tracking
+    test_results = []
+    
+    # Run tests
+    for test_name, test_func in test_functions:
+        try:
+            print(f"\n{'='*60}")
+            result = test_func()
+            test_results.append((test_name, result))
+            
+            if result:
+                print(f"✅ {test_name}: PASSED")
+            else:
+                print(f"❌ {test_name}: FAILED")
+                
+        except Exception as e:
+            print(f"💥 {test_name}: ERROR - {str(e)}")
+            test_results.append((test_name, False))
+    
+    # Print summary
+    print(f"\n{'='*60}")
+    print("📊 MILESTONE-COST LINKING TEST SUMMARY")
+    print("=" * 60)
+    
+    passed = sum(1 for _, result in test_results if result)
+    total = len(test_results)
+    
+    for test_name, result in test_results:
+        status = "✅ PASS" if result else "❌ FAIL"
+        print(f"{status:<10} {test_name}")
+    
+    print(f"\n🎯 Overall Result: {passed}/{total} tests passed ({passed/total*100:.1f}%)")
+    
+    if passed == total:
+        print("🎉 ALL MILESTONE-COST LINKING TESTS PASSED! Backend API is fully functional.")
+        return True
+    else:
+        print("⚠️  Some tests failed. Check the detailed output above.")
+        return False
+
 def run_all_tests():
     """Run all backend tests"""
     print("🚀 Starting Comprehensive Backend API Testing")
