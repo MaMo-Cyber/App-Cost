@@ -5428,6 +5428,23 @@ const CostEntry = ({ project, onBack }) => {
                   ))}
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('milestone')}</label>
+                <select
+                  value={formData.milestone_id}
+                  onChange={(e) => setFormData({...formData, milestone_id: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">No specific milestone</option>
+                  {milestones.map(milestone => (
+                    <option key={milestone.id} value={milestone.id}>
+                      🎯 {milestone.name} - {new Date(milestone.milestone_date).toLocaleDateString()}
+                      {milestone.is_critical && ' (Critical)'}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div>
