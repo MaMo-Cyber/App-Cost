@@ -260,6 +260,31 @@ const GanttChart = ({ project, onBack }) => {
               ))}
             </div>
 
+            {/* Milestone Diamond Markers */}
+            {ganttData.milestones?.map((milestone) => (
+              <div
+                key={milestone.id}
+                className="absolute z-20 pointer-events-none"
+                style={{
+                  left: `calc(256px + ${milestone.positionPercent}%)`,
+                  top: '6px',
+                  transform: 'translateX(-50%)'
+                }}
+              >
+                <div
+                  className={`w-3 h-3 transform rotate-45 ${
+                    milestone.is_critical 
+                      ? (milestone.status === 'completed' ? 'bg-green-600' : 'bg-red-600')
+                      : (milestone.status === 'completed' ? 'bg-green-500' : 'bg-blue-500')
+                  } border-2 border-white shadow-lg`}
+                  title={`${milestone.name} - ${formatDate(milestone.milestone_date)}`}
+                ></div>
+                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 hover:opacity-100 transition-opacity">
+                  🎯 {milestone.name}
+                </div>
+              </div>
+            ))}
+
             {/* Current Date Indicator - FIXED positioning and visibility */}
             {ganttData.projectStart && (() => {
               const now = new Date();
