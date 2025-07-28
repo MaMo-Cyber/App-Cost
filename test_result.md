@@ -510,7 +510,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Enhanced EVM functionality with obligations"
+    - "Milestone-Cost Linking functionality"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
