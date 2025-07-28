@@ -714,6 +714,86 @@ async def update_phase_status(phase_id: str, status_data: dict):
     
     return {"message": "Phase status updated"}
 
+# Milestone routes
+@api_router.post("/milestones", response_model=Milestone)
+async def create_milestone(milestone: MilestoneCreate):
+    milestone_dict = milestone.dict()
+    milestone_obj = Milestone(**milestone_dict)
+    
+    # Convert date objects to strings for MongoDB storage
+    milestone_dict["milestone_date"] = milestone_obj.milestone_date.isoformat()
+    milestone_dict["created_at"] = milestone_obj.created_at.isoformat()
+    milestone_dict["updated_at"] = milestone_obj.updated_at.isoformat()
+    
+    await db.milestones.insert_one(milestone_dict)
+    return milestone_obj
+
+@api_router.get("/projects/{project_id}/milestones", response_model=List[Milestone])
+async def get_project_milestones(project_id: str):
+    milestones = await db.milestones.find({"project_id": project_id}).to_list(1000)
+    
+    # Convert string dates back to date objects for response
+    for milestone in milestones:
+        milestone["milestone_date"] = datetime.fromisoformat(milestone["milestone_date"]).date()
+        milestone["created_at"] = datetime.fromisoformat(milestone["created_at"])
+        milestone["updated_at"] = datetime.fromisoformat(milestone["updated_at"])
+    
+    return [Milestone(**milestone) for milestone in milestones]
+
+@api_router.put("/milestones/{milestone_id}", response_model=Milestone)
+async def update_milestone(milestone_id: str, milestone_update: MilestoneUpdate):
+    update_dict = {k: v for k, v in milestone_update.dict().items() if v is not None}
+    
+    if "milestone_date" in update_dict:
+        old_milestone = await db.milestones.find_one({"id": milestone_id})
+        if old_milestone:
+            old_date = datetime.fromisoformat(old_milestone["milestone_date"]).date()
+            new_date = update_dict["milestone_date"]
+            
+            # Update all cost entries linked to this milestone with new date
+            if old_date != new_date:
+                await db.cost_entries.update_many(
+                    {"milestone_id": milestone_id},
+                    {"$set": {
+                        "entry_date": new_date.isoformat(),
+                        "due_date": new_date.isoformat()
+                    }}
+                )
+        
+        update_dict["milestone_date"] = update_dict["milestone_date"].isoformat()
+    
+    update_dict["updated_at"] = datetime.utcnow().isoformat()
+    
+    result = await db.milestones.update_one(
+        {"id": milestone_id}, 
+        {"$set": update_dict}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Milestone not found")
+    
+    updated_milestone = await db.milestones.find_one({"id": milestone_id})
+    updated_milestone["milestone_date"] = datetime.fromisoformat(updated_milestone["milestone_date"]).date()
+    updated_milestone["created_at"] = datetime.fromisoformat(updated_milestone["created_at"])
+    updated_milestone["updated_at"] = datetime.fromisoformat(updated_milestone["updated_at"])
+    
+    return Milestone(**updated_milestone)
+
+@api_router.delete("/milestones/{milestone_id}")
+async def delete_milestone(milestone_id: str):
+    # First, unlink any cost entries from this milestone
+    await db.cost_entries.update_many(
+        {"milestone_id": milestone_id},
+        {"$unset": {"milestone_id": ""}}
+    )
+    
+    result = await db.milestones.delete_one({"id": milestone_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Milestone not found")
+    
+    return {"message": "Milestone deleted successfully"}
+
 # Cost category routes
 @api_router.post("/cost-categories", response_model=CostCategory)
 async def create_cost_category(category: CostCategoryCreate):
