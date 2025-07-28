@@ -1366,6 +1366,9 @@ const translations = {
     milestoneStatus: "Status",
     linkedToMilestone: "Linked to Milestone",
     
+    // Financial Overview
+    financialOverview: "Financial Overview",
+    
     // Category Management
     addCategory: "Add Category",
     editCategory: "Edit Category",
