@@ -5159,6 +5159,7 @@ const CostEntry = ({ project, onBack }) => {
   const [formData, setFormData] = useState({
     category_id: '',
     phase_id: '',
+    milestone_id: '',
     description: '',
     hours: '',
     hourly_rate: '',
