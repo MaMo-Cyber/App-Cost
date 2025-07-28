@@ -5180,6 +5180,7 @@ const CostEntry = ({ project, onBack }) => {
   useEffect(() => {
     fetchCategories();
     fetchPhases();
+    fetchMilestones();
   }, []);
 
   // Update payment splits when total amount changes
