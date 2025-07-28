@@ -5303,6 +5303,7 @@ const CostEntry = ({ project, onBack }) => {
             project_id: project.id,
             category_id: formData.category_id,
             phase_id: formData.phase_id || null,
+            milestone_id: formData.milestone_id || null,
             description: `${formData.description} - ${split.description} (${split.percentage}%)`,
             hours: formData.cost_type === 'hourly' ? (parseFloat(formData.hours) * split.percentage / 100) : null,
             hourly_rate: formData.cost_type === 'hourly' ? parseFloat(formData.hourly_rate) || 0 : null,
