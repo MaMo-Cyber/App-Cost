@@ -73,10 +73,23 @@ const GanttChart = ({ project, onBack }) => {
     }
   };
 
-  const calculateGanttLayout = (phasesData, tasksData) => {
+  const calculateGanttLayout = (phasesData, tasksData, milestonesData) => {
     const projectStart = new Date(project.start_date);
     const projectEnd = new Date(project.end_date);
     const totalDays = Math.ceil((projectEnd - projectStart) / (1000 * 60 * 60 * 24));
+    
+    // Calculate milestone positions
+    const milestonePositions = milestonesData.map(milestone => {
+      const milestoneDate = new Date(milestone.milestone_date);
+      const dayOffset = Math.ceil((milestoneDate - projectStart) / (1000 * 60 * 60 * 24));
+      const positionPercent = Math.max(0, Math.min(100, (dayOffset / totalDays) * 100));
+      
+      return {
+        ...milestone,
+        positionPercent,
+        dayOffset
+      };
+    });
     
     const ganttLayout = {
       projectStart,
@@ -96,7 +109,8 @@ const GanttChart = ({ project, onBack }) => {
           leftPercent: (startOffset / totalDays) * 100,
           tasks: tasksData[phase.id] || []
         };
-      })
+      }),
+      milestones: milestonePositions
     };
     
     setGanttData(ganttLayout);
