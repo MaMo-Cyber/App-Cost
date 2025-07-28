@@ -884,6 +884,17 @@ const translations = {
     hvac: "HLK",
     contingency: "Contingency (10%)",
     
+    // Milestones
+    milestones: "Meilensteine",
+    manageMilestones: "Meilensteine verwalten",
+    addMilestone: "Meilenstein hinzufügen",
+    editMilestone: "Meilenstein bearbeiten",
+    milestoneName: "Meilenstein Name",
+    milestoneDate: "Meilenstein Datum",
+    milestoneDescription: "Beschreibung",
+    criticalMilestone: "Kritischer Meilenstein",
+    milestoneStatus: "Status",
+    linkedToMilestone: "Mit Meilenstein verknüpft",
     // Gantt Chart & Project Management
     legend: "Legende",
     completed: "Abgeschlossen", 
