@@ -5150,6 +5150,7 @@ const ObligationManager = ({ project, onBack }) => {
 const CostEntry = ({ project, onBack }) => {
   const [categories, setCategories] = useState([]);
   const [phases, setPhases] = useState([]);
+  const [milestones, setMilestones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPaymentSplit, setShowPaymentSplit] = useState(false);
   const { t } = useLanguage();
