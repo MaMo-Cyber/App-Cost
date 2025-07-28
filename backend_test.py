@@ -1167,6 +1167,263 @@ def test_future_phase_analysis():
     
     return True
 
+def test_category_management_crud():
+    """Test comprehensive category management CRUD operations"""
+    print("\n🧪 Testing Category Management CRUD Operations")
+    
+    # Test 1: Create new category
+    print("  🔍 Testing category creation (CREATE)...")
+    
+    new_category_data = {
+        "name": "Testing & QA Services",
+        "type": "hourly",
+        "description": "Quality assurance and testing services",
+        "default_rate": 65.0
+    }
+    
+    created_category, status = make_request('POST', '/cost-categories', new_category_data)
+    if status != 200 or not created_category:
+        print(f"  ❌ Failed to create new category - Status: {status}")
+        return False
+    
+    # Verify all fields are present
+    for field, expected_value in new_category_data.items():
+        if created_category.get(field) != expected_value:
+            print(f"  ❌ Category field mismatch - {field}: expected {expected_value}, got {created_category.get(field)}")
+            return False
+    
+    # Verify ID was generated
+    if not created_category.get('id') or len(created_category['id']) < 10:
+        print(f"  ❌ Invalid category ID generated: {created_category.get('id')}")
+        return False
+    
+    category_id = created_category['id']
+    print(f"  ✅ Created category: '{created_category['name']}' (ID: {category_id[:8]}...)")
+    print(f"    📋 Type: {created_category['type']}")
+    print(f"    💰 Default Rate: ${created_category.get('default_rate', 'N/A')}")
+    
+    # Test 2: Read all categories (READ)
+    print("  🔍 Testing category retrieval (READ)...")
+    
+    all_categories, status = make_request('GET', '/cost-categories')
+    if status != 200 or not all_categories:
+        print(f"  ❌ Failed to retrieve categories - Status: {status}")
+        return False
+    
+    # Verify our new category is in the list
+    found_category = None
+    for category in all_categories:
+        if category.get('id') == category_id:
+            found_category = category
+            break
+    
+    if not found_category:
+        print("  ❌ Newly created category not found in category list")
+        return False
+    
+    print(f"  ✅ Retrieved {len(all_categories)} categories including newly created one")
+    
+    # Analyze category types for comprehensive coverage
+    type_distribution = {}
+    for category in all_categories:
+        cat_type = category.get('type', 'unknown')
+        type_distribution[cat_type] = type_distribution.get(cat_type, 0) + 1
+    
+    print(f"    📊 Category type distribution:")
+    for cat_type, count in type_distribution.items():
+        print(f"      {cat_type}: {count} categories")
+    
+    # Test 3: Update category (UPDATE)
+    print("  🔍 Testing category update (UPDATE)...")
+    
+    update_data = {
+        "name": "Testing & QA Services - Updated",
+        "type": "hourly",
+        "description": "Updated: Comprehensive quality assurance and testing services",
+        "default_rate": 75.0
+    }
+    
+    updated_category, status = make_request('PUT', f'/cost-categories/{category_id}', update_data)
+    if status != 200 or not updated_category:
+        print(f"  ❌ Failed to update category - Status: {status}")
+        return False
+    
+    # Verify updates were applied
+    for field, expected_value in update_data.items():
+        if updated_category.get(field) != expected_value:
+            print(f"  ❌ Update failed for field {field}: expected {expected_value}, got {updated_category.get(field)}")
+            return False
+    
+    print(f"  ✅ Updated category successfully:")
+    print(f"    📝 New Name: '{updated_category['name']}'")
+    print(f"    📋 New Description: '{updated_category['description']}'")
+    print(f"    💰 New Default Rate: ${updated_category['default_rate']}")
+    
+    # Test 4: Verify update persistence
+    print("  🔍 Testing update persistence...")
+    
+    retrieved_updated, status = make_request('GET', '/cost-categories')
+    if status != 200:
+        print("  ❌ Failed to retrieve categories for update verification")
+        return False
+    
+    # Find the updated category
+    persisted_category = None
+    for category in retrieved_updated:
+        if category.get('id') == category_id:
+            persisted_category = category
+            break
+    
+    if not persisted_category:
+        print("  ❌ Updated category not found after persistence check")
+        return False
+    
+    # Verify the updates persisted
+    if persisted_category.get('name') != update_data['name']:
+        print(f"  ❌ Update not persisted: expected '{update_data['name']}', got '{persisted_category.get('name')}'")
+        return False
+    
+    print("  ✅ Category updates persisted correctly")
+    
+    # Test 5: Test category usage validation before deletion
+    print("  🔍 Testing category usage validation...")
+    
+    # Create a cost entry using this category to test deletion protection
+    if test_data.get('project_id'):
+        test_cost_entry = {
+            "project_id": test_data['project_id'],
+            "category_id": category_id,
+            "description": "Test entry to validate category deletion protection",
+            "hours": 4.0,
+            "hourly_rate": 75.0
+        }
+        
+        cost_entry, status = make_request('POST', '/cost-entries', test_cost_entry)
+        if status == 200 and cost_entry:
+            print("  ✅ Created cost entry using the test category")
+            test_data['cost_entry_ids'].append(cost_entry['id'])
+            
+            # Now try to delete the category (should fail)
+            delete_result, delete_status = make_request('DELETE', f'/cost-categories/{category_id}')
+            if delete_status == 200:
+                print("  ❌ Category deletion should have been blocked due to usage")
+                return False
+            elif delete_status == 400:
+                print("  ✅ Category deletion correctly blocked due to usage in cost entries")
+            else:
+                print(f"  ⚠️  Unexpected status for protected category deletion: {delete_status}")
+            
+            # Clean up the cost entry for proper deletion test
+            cleanup_result, cleanup_status = make_request('DELETE', f'/cost-entries/{cost_entry["id"]}')
+            if cleanup_status == 200:
+                print("  ✅ Cleaned up test cost entry")
+            else:
+                print("  ⚠️  Failed to clean up test cost entry")
+        else:
+            print("  ⚠️  Could not create test cost entry for deletion protection test")
+    else:
+        print("  ⚠️  No project ID available for deletion protection test")
+    
+    # Test 6: Delete category (DELETE)
+    print("  🔍 Testing category deletion (DELETE)...")
+    
+    delete_result, status = make_request('DELETE', f'/cost-categories/{category_id}')
+    if status != 200:
+        print(f"  ❌ Failed to delete category - Status: {status}")
+        return False
+    
+    print("  ✅ Category deleted successfully")
+    
+    # Test 7: Verify deletion
+    print("  🔍 Verifying category deletion...")
+    
+    final_categories, status = make_request('GET', '/cost-categories')
+    if status != 200:
+        print("  ❌ Failed to retrieve categories for deletion verification")
+        return False
+    
+    # Verify the category is no longer in the list
+    deleted_category = None
+    for category in final_categories:
+        if category.get('id') == category_id:
+            deleted_category = category
+            break
+    
+    if deleted_category:
+        print("  ❌ Category still exists after deletion")
+        return False
+    
+    print(f"  ✅ Category deletion verified: {len(final_categories)} categories remaining")
+    
+    # Test 8: Test invalid operations
+    print("  🔍 Testing invalid operations...")
+    
+    # Try to update non-existent category
+    invalid_update, status = make_request('PUT', f'/cost-categories/{category_id}', update_data)
+    if status == 200:
+        print("  ❌ Should not be able to update deleted category")
+        return False
+    elif status == 404:
+        print("  ✅ Correctly rejected update of non-existent category")
+    
+    # Try to delete non-existent category
+    invalid_delete, status = make_request('DELETE', f'/cost-categories/{category_id}')
+    if status == 200:
+        print("  ❌ Should not be able to delete non-existent category")
+        return False
+    elif status == 404:
+        print("  ✅ Correctly rejected deletion of non-existent category")
+    
+    # Test 9: Test category creation with different types
+    print("  🔍 Testing category creation with different types...")
+    
+    test_categories = [
+        {"name": "Material Supplies", "type": "material", "description": "Raw materials and supplies"},
+        {"name": "Fixed Licensing", "type": "fixed", "description": "Software and equipment licenses"},
+        {"name": "Custom Services", "type": "custom", "description": "Specialized custom services"}
+    ]
+    
+    created_test_categories = []
+    for cat_data in test_categories:
+        test_cat, status = make_request('POST', '/cost-categories', cat_data)
+        if status == 200 and test_cat:
+            created_test_categories.append(test_cat['id'])
+            print(f"    ✅ Created {cat_data['type']} category: '{cat_data['name']}'")
+        else:
+            print(f"    ❌ Failed to create {cat_data['type']} category")
+            return False
+    
+    # Clean up test categories
+    for cat_id in created_test_categories:
+        cleanup_result, status = make_request('DELETE', f'/cost-categories/{cat_id}')
+        if status != 200:
+            print(f"    ⚠️  Failed to clean up test category {cat_id}")
+    
+    print("  ✅ Category type creation tests completed")
+    
+    # Test 10: Final verification of category management system
+    print("  🔍 Final verification of category management system...")
+    
+    final_verification, status = make_request('GET', '/cost-categories')
+    if status != 200:
+        print("  ❌ Final verification failed")
+        return False
+    
+    # Ensure we have sufficient categories for the application
+    if len(final_verification) < 5:
+        print(f"  ⚠️  Warning: Only {len(final_verification)} categories available - may need more for good UX")
+        
+        # Initialize default categories if needed
+        init_result, init_status = make_request('POST', '/initialize-default-categories')
+        if init_status == 200:
+            print("  ✅ Initialized default categories for better coverage")
+        else:
+            print("  ⚠️  Could not initialize default categories")
+    
+    print(f"  ✅ Category management system fully functional with {len(final_verification)} categories")
+    
+    return True
+
 def test_milestone_cost_linking():
     """Test milestone-cost linking functionality and automatic date synchronization"""
     print("\n🧪 Testing Milestone-Cost Linking Functionality")
