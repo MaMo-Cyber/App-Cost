@@ -1167,6 +1167,277 @@ def test_future_phase_analysis():
     
     return True
 
+def test_milestone_cost_linking():
+    """Test milestone-cost linking functionality and automatic date synchronization"""
+    print("\n🧪 Testing Milestone-Cost Linking Functionality")
+    
+    if not test_data['project_id'] or not test_data['category_ids']:
+        print("  ❌ Missing project ID or category IDs for milestone-cost linking testing")
+        return False
+    
+    milestone_ids = []
+    
+    # Test 1: Create milestones for testing
+    print("  🔍 Creating test milestones...")
+    
+    milestones_data = [
+        {
+            "project_id": test_data['project_id'],
+            "name": "Phase 1 Completion",
+            "description": "Completion of initial planning and design phase",
+            "milestone_date": "2024-03-15",
+            "is_critical": True
+        },
+        {
+            "project_id": test_data['project_id'],
+            "name": "Development Milestone",
+            "description": "Core development features completed",
+            "milestone_date": "2024-05-30",
+            "is_critical": False
+        },
+        {
+            "project_id": test_data['project_id'],
+            "name": "Final Delivery",
+            "description": "Project completion and final delivery",
+            "milestone_date": "2024-07-15",
+            "is_critical": True
+        }
+    ]
+    
+    for milestone_data in milestones_data:
+        milestone, status = make_request('POST', '/milestones', milestone_data)
+        if status != 200 or not milestone:
+            print(f"  ❌ Failed to create milestone: {milestone_data['name']}")
+            return False
+        
+        milestone_ids.append(milestone['id'])
+        print(f"  ✅ Created milestone: {milestone['name']} - Due: {milestone_data['milestone_date']}")
+    
+    # Test 2: Create cost entry with milestone_id (basic linking)
+    print("  🔍 Testing cost entry with milestone linking...")
+    
+    milestone_cost_entry = {
+        "project_id": test_data['project_id'],
+        "milestone_id": milestone_ids[0],  # Link to first milestone
+        "category_id": test_data['category_ids'][0],
+        "description": "Development work for Phase 1 completion milestone",
+        "hours": 32.0,
+        "hourly_rate": 95.0,
+        "entry_date": "2024-02-20"  # Earlier than milestone date
+    }
+    
+    entry1, status = make_request('POST', '/cost-entries', milestone_cost_entry)
+    if status != 200 or not entry1:
+        print(f"  ❌ Failed to create cost entry with milestone link - Status: {status}")
+        return False
+    
+    # Verify milestone linking
+    if entry1.get('milestone_id') != milestone_ids[0]:
+        print(f"  ❌ Milestone ID not properly linked: expected {milestone_ids[0]}, got {entry1.get('milestone_id')}")
+        return False
+    
+    print(f"  ✅ Cost entry linked to milestone: ${entry1['total_amount']:,.2f}")
+    print(f"    📅 Entry Date: {entry1.get('entry_date')}")
+    print(f"    🎯 Milestone ID: {entry1.get('milestone_id')}")
+    
+    test_data['cost_entry_ids'].append(entry1['id'])
+    
+    # Test 3: Test automatic date synchronization
+    print("  🔍 Testing automatic date synchronization with milestone...")
+    
+    # Create cost entry where milestone date is later than entry date
+    sync_cost_entry = {
+        "project_id": test_data['project_id'],
+        "milestone_id": milestone_ids[1],  # Link to second milestone (2024-05-30)
+        "category_id": test_data['category_ids'][0],
+        "description": "Work synchronized with development milestone",
+        "quantity": 3.0,
+        "unit_price": 1500.0,
+        "entry_date": "2024-04-15",  # Earlier than milestone date (2024-05-30)
+        "status": "outstanding"
+    }
+    
+    entry2, status = make_request('POST', '/cost-entries', sync_cost_entry)
+    if status != 200 or not entry2:
+        print(f"  ❌ Failed to create cost entry for date sync test - Status: {status}")
+        return False
+    
+    # Check if entry_date was synchronized to milestone date
+    milestone_date = "2024-05-30"
+    if entry2.get('entry_date') != milestone_date:
+        print(f"  ❌ Date synchronization failed: expected {milestone_date}, got {entry2.get('entry_date')}")
+        return False
+    
+    # Check if due_date was also set to milestone date
+    if entry2.get('due_date') != milestone_date:
+        print(f"  ❌ Due date synchronization failed: expected {milestone_date}, got {entry2.get('due_date')}")
+        return False
+    
+    print(f"  ✅ Automatic date synchronization working:")
+    print(f"    📅 Original Entry Date: 2024-04-15")
+    print(f"    🎯 Milestone Date: {milestone_date}")
+    print(f"    📅 Synchronized Entry Date: {entry2.get('entry_date')}")
+    print(f"    📅 Synchronized Due Date: {entry2.get('due_date')}")
+    
+    test_data['cost_entry_ids'].append(entry2['id'])
+    
+    # Test 4: Test cost entry without milestone (should not affect dates)
+    print("  🔍 Testing cost entry without milestone (control test)...")
+    
+    no_milestone_entry = {
+        "project_id": test_data['project_id'],
+        "category_id": test_data['category_ids'][0],
+        "description": "Regular cost entry without milestone",
+        "hours": 16.0,
+        "hourly_rate": 85.0,
+        "entry_date": "2024-03-10",
+        "due_date": "2024-04-10",
+        "status": "outstanding"
+    }
+    
+    entry3, status = make_request('POST', '/cost-entries', no_milestone_entry)
+    if status != 200 or not entry3:
+        print(f"  ❌ Failed to create cost entry without milestone - Status: {status}")
+        return False
+    
+    # Verify dates remain unchanged
+    if entry3.get('entry_date') != "2024-03-10":
+        print(f"  ❌ Entry date changed unexpectedly: expected 2024-03-10, got {entry3.get('entry_date')}")
+        return False
+    
+    if entry3.get('due_date') != "2024-04-10":
+        print(f"  ❌ Due date changed unexpectedly: expected 2024-04-10, got {entry3.get('due_date')}")
+        return False
+    
+    if entry3.get('milestone_id') is not None:
+        print(f"  ❌ Milestone ID should be None, got {entry3.get('milestone_id')}")
+        return False
+    
+    print(f"  ✅ Cost entry without milestone preserves original dates:")
+    print(f"    📅 Entry Date: {entry3.get('entry_date')}")
+    print(f"    📅 Due Date: {entry3.get('due_date')}")
+    print(f"    🎯 Milestone ID: {entry3.get('milestone_id')}")
+    
+    test_data['cost_entry_ids'].append(entry3['id'])
+    
+    # Test 5: Test milestone update affects linked cost entries
+    print("  🔍 Testing milestone date update affects linked cost entries...")
+    
+    # Update milestone date
+    milestone_update = {
+        "milestone_date": "2024-06-15"  # Change from 2024-05-30 to 2024-06-15
+    }
+    
+    updated_milestone, status = make_request('PUT', f'/milestones/{milestone_ids[1]}', milestone_update)
+    if status != 200 or not updated_milestone:
+        print(f"  ❌ Failed to update milestone date - Status: {status}")
+        return False
+    
+    print(f"  ✅ Updated milestone date to: {updated_milestone.get('milestone_date')}")
+    
+    # Check if linked cost entry dates were updated
+    updated_entry, status = make_request('GET', f'/projects/{test_data["project_id"]}/cost-entries')
+    if status != 200:
+        print("  ❌ Failed to retrieve cost entries after milestone update")
+        return False
+    
+    # Find the cost entry linked to the updated milestone
+    linked_entry = None
+    for entry in updated_entry:
+        if entry.get('milestone_id') == milestone_ids[1]:
+            linked_entry = entry
+            break
+    
+    if not linked_entry:
+        print("  ❌ Could not find cost entry linked to updated milestone")
+        return False
+    
+    # Verify the cost entry dates were updated
+    expected_new_date = "2024-06-15"
+    if linked_entry.get('entry_date') != expected_new_date:
+        print(f"  ❌ Cost entry date not updated: expected {expected_new_date}, got {linked_entry.get('entry_date')}")
+        return False
+    
+    if linked_entry.get('due_date') != expected_new_date:
+        print(f"  ❌ Cost entry due date not updated: expected {expected_new_date}, got {linked_entry.get('due_date')}")
+        return False
+    
+    print(f"  ✅ Milestone date update synchronized to linked cost entries:")
+    print(f"    📅 New Entry Date: {linked_entry.get('entry_date')}")
+    print(f"    📅 New Due Date: {linked_entry.get('due_date')}")
+    
+    # Test 6: Test milestone deletion unlinks cost entries
+    print("  🔍 Testing milestone deletion unlinks cost entries...")
+    
+    # Delete a milestone
+    delete_result, status = make_request('DELETE', f'/milestones/{milestone_ids[2]}')
+    if status != 200:
+        print(f"  ❌ Failed to delete milestone - Status: {status}")
+        return False
+    
+    print("  ✅ Milestone deleted successfully")
+    
+    # Verify milestone is gone
+    milestones, status = make_request('GET', f'/projects/{test_data["project_id"]}/milestones')
+    if status != 200:
+        print("  ❌ Failed to retrieve milestones after deletion")
+        return False
+    
+    if len(milestones) != len(milestone_ids) - 1:
+        print(f"  ❌ Expected {len(milestone_ids) - 1} milestones after deletion, got {len(milestones)}")
+        return False
+    
+    print(f"  ✅ Milestone deletion verified: {len(milestones)} milestones remaining")
+    
+    # Test 7: Test invalid milestone_id handling
+    print("  🔍 Testing invalid milestone_id handling...")
+    
+    invalid_milestone_entry = {
+        "project_id": test_data['project_id'],
+        "milestone_id": "invalid-milestone-id",
+        "category_id": test_data['category_ids'][0],
+        "description": "Entry with invalid milestone ID",
+        "hours": 8.0,
+        "hourly_rate": 75.0
+    }
+    
+    invalid_entry, status = make_request('POST', '/cost-entries', invalid_milestone_entry)
+    if status == 200:
+        print("  ❌ Should have rejected invalid milestone_id")
+        return False
+    elif status == 404:
+        print("  ✅ Correctly rejected invalid milestone_id with 404 error")
+    else:
+        print(f"  ⚠️  Unexpected status for invalid milestone_id: {status}")
+    
+    # Test 8: Verify milestone-cost relationship in project summary
+    print("  🔍 Testing milestone-cost relationships in project data...")
+    
+    # Get all cost entries for the project
+    all_entries, status = make_request('GET', f'/projects/{test_data["project_id"]}/cost-entries')
+    if status != 200:
+        print("  ❌ Failed to get all cost entries")
+        return False
+    
+    # Count entries with milestone links
+    milestone_linked_entries = [entry for entry in all_entries if entry.get('milestone_id')]
+    non_milestone_entries = [entry for entry in all_entries if not entry.get('milestone_id')]
+    
+    print(f"  📊 Cost Entry Summary:")
+    print(f"    🎯 Milestone-linked entries: {len(milestone_linked_entries)}")
+    print(f"    📝 Regular entries: {len(non_milestone_entries)}")
+    print(f"    📋 Total entries: {len(all_entries)}")
+    
+    # Verify we have the expected number of milestone-linked entries
+    expected_milestone_entries = 2  # We created 2 entries with milestones
+    if len(milestone_linked_entries) != expected_milestone_entries:
+        print(f"  ❌ Expected {expected_milestone_entries} milestone-linked entries, got {len(milestone_linked_entries)}")
+        return False
+    
+    print("  ✅ Milestone-cost relationship counts are correct")
+    
+    return True
+
 def test_comprehensive_evm_integration():
     """Test comprehensive EVM integration across all endpoints"""
     print("\n🧪 Testing Comprehensive EVM Integration")
