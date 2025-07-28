@@ -1322,7 +1322,9 @@ const translations = {
     
     // Summary Labels
     costBreakdown: "Cost Breakdown",
+    costBreakdownActivity: "Cost Breakdown & Activity",
     recentEntries: "Recent Entries",
+    recentCostEntries: "Recent Cost Entries",
     projectSummary: "Project Summary",
     totalBudget: "Total Budget",
     totalSpent: "Total Spent",
