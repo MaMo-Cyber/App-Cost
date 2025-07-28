@@ -3199,65 +3199,100 @@ const Dashboard = ({ project, onNavigate, onSwitchProject }) => {
           </div>
         </div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="text-center">
-              <div className="mx-auto p-2 bg-blue-100 rounded-lg w-fit mb-3">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                </svg>
+        {/* Financial Overview Section */}
+        <div className="mb-8">
+          <div className="flex items-center mb-4">
+            <div className="p-2 bg-blue-100 rounded-lg mr-3">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-gray-900">💰 {t('financialOverview')}</h2>
+          </div>
+
+          {/* Core Budget Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <div className="text-center">
+                <div className="mx-auto p-3 bg-blue-100 rounded-lg w-fit mb-4">
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                  </svg>
+                </div>
+                <p className="text-lg font-medium text-gray-600 mb-2">Total Budget</p>
+                <p className="text-3xl font-bold text-blue-600">€{summary.project.total_budget.toLocaleString()}</p>
               </div>
-              <p className="text-sm font-medium text-gray-600">Total Budget</p>
-              <p className="text-2xl font-semibold text-gray-900">€{summary.project.total_budget.toLocaleString()}</p>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <div className="text-center">
+                <div className="mx-auto p-3 bg-gray-100 rounded-lg w-fit mb-4">
+                  <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                  </svg>
+                </div>
+                <p className="text-lg font-medium text-gray-600 mb-2">Total Spent</p>
+                <p className="text-3xl font-bold text-gray-900">€{summary.total_spent.toLocaleString()}</p>
+                <p className="text-sm text-gray-500 mt-1">{((summary.total_spent / summary.project.total_budget) * 100).toFixed(1)}% of budget</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <div className="text-center">
+                <div className="mx-auto p-3 bg-purple-100 rounded-lg w-fit mb-4">
+                  <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4"></path>
+                  </svg>
+                </div>
+                <p className="text-lg font-medium text-gray-600 mb-2">Remaining Budget</p>
+                <p className="text-3xl font-bold text-purple-600">€{summary.budget_remaining_actual.toLocaleString()}</p>
+                <p className="text-sm text-gray-500 mt-1">{((summary.budget_remaining_actual / summary.project.total_budget) * 100).toFixed(1)}% remaining</p>
+              </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="text-center">
-              <div className="mx-auto p-2 bg-gray-100 rounded-lg w-fit mb-3">
-                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
-                </svg>
+          {/* Payment Status Breakdown */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-red-200 bg-red-50">
+              <div className="text-center">
+                <div className="mx-auto p-3 bg-red-100 rounded-lg w-fit mb-4">
+                  <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 18.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                  </svg>
+                </div>
+                <p className="text-lg font-medium text-red-700 mb-2">Outstanding</p>
+                <p className="text-3xl font-bold text-red-800">€{summary.total_outstanding.toLocaleString()}</p>
+                <p className="text-sm text-red-600 mt-1">Needs payment</p>
               </div>
-              <p className="text-sm font-medium text-gray-600">Total Spent</p>
-              <p className="text-2xl font-semibold text-gray-900">€{summary.total_spent.toLocaleString()}</p>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-green-200 bg-green-50">
+              <div className="text-center">
+                <div className="mx-auto p-3 bg-green-100 rounded-lg w-fit mb-4">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4"></path>
+                  </svg>
+                </div>
+                <p className="text-lg font-medium text-green-700 mb-2">Paid</p>
+                <p className="text-3xl font-bold text-green-800">€{summary.total_paid.toLocaleString()}</p>
+                <p className="text-sm text-green-600 mt-1">Completed payments</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-yellow-200 bg-yellow-50">
+              <div className="text-center">
+                <div className="mx-auto p-3 bg-yellow-100 rounded-lg w-fit mb-4">
+                  <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                  </svg>
+                </div>
+                <p className="text-lg font-medium text-yellow-700 mb-2">Available (If Paid)</p>
+                <p className="text-3xl font-bold text-yellow-800">€{summary.budget_remaining_committed.toLocaleString()}</p>
+                <p className="text-sm text-yellow-600 mt-1">Excluding outstanding</p>
+              </div>
             </div>
           </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-red-200 bg-red-50">
-            <div className="text-center">
-              <div className="mx-auto p-2 bg-red-100 rounded-lg w-fit mb-3">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 18.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                </svg>
-              </div>
-              <p className="text-sm font-medium text-red-700">Outstanding</p>
-              <p className="text-2xl font-semibold text-red-800">€{summary.total_outstanding.toLocaleString()}</p>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-green-200 bg-green-50">
-            <div className="text-center">
-              <div className="mx-auto p-2 bg-green-100 rounded-lg w-fit mb-3">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4"></path>
-                </svg>
-              </div>
-              <p className="text-sm font-medium text-green-700">Paid Only</p>
-              <p className="text-2xl font-semibold text-green-800">€{summary.total_paid.toLocaleString()}</p>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="text-center">
-              <div className="mx-auto p-2 bg-purple-100 rounded-lg w-fit mb-3">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4"></path>
-                </svg>
-              </div>
-              <p className="text-sm font-medium text-gray-600">Remaining (Actual)</p>
-              <p className="text-2xl font-semibold text-gray-900">€{summary.budget_remaining_actual.toLocaleString()}</p>
+        </div>
               <p className="text-xs text-gray-500">After all commitments</p>
             </div>
           </div>
