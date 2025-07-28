@@ -6444,6 +6444,12 @@ function App() {
             onBack={() => setCurrentView('dashboard')} 
           />
         );
+      case 'category-manager':
+        return (
+          <CategoryManager 
+            onBack={() => setCurrentView('dashboard')} 
+          />
+        );
       case 'gantt-chart':
         return (
           <GanttChart 
