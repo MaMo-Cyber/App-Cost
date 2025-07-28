@@ -518,6 +518,8 @@ test_plan:
 agent_communication:
     - agent: "main"
       message: "Initial implementation complete. Built comprehensive project cost tracking system with flexible categories, phase management, and real-time dashboard. All backend endpoints implemented with proper data models. Frontend has project setup, cost entry, phase management, and dashboard views. Ready for backend API testing."
+    - agent: "main"
+      message: "Starting work on user requested features: 1) Fix milestone-cost linking in cost entry forms, 2) Create comprehensive category management system, 3) Reorganize main UI for better organization. Issue identified: CostEntry component missing milestone fetching and dropdown selection. Backend milestone system fully functional according to test results."
     - agent: "testing"
       message: "✅ Backend testing COMPLETE - All API endpoints working perfectly! Fixed 3 critical issues: date serialization, phase status endpoint, and ObjectId serialization. 100% test success rate with comprehensive coverage of all features."
     - agent: "main"
