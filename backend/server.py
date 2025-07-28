@@ -998,6 +998,17 @@ async def create_cost_entry(entry: CostEntryCreate):
         
         entry_dict["category_name"] = category["name"]
         
+        # Handle milestone linking - sync dates automatically
+        if entry.milestone_id:
+            milestone = await db.milestones.find_one({"id": entry.milestone_id})
+            if milestone:
+                # Auto-sync entry date and due date to milestone date
+                milestone_date = datetime.fromisoformat(milestone["milestone_date"]).date()
+                entry_dict["entry_date"] = milestone_date.isoformat()
+                entry_dict["due_date"] = milestone_date.isoformat()
+            else:
+                raise HTTPException(status_code=404, detail="Milestone not found")
+        
         # Calculate total amount if not provided
         if not entry.total_amount:
             if entry.hours and entry.hourly_rate:
