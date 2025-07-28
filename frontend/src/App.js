@@ -5216,6 +5216,15 @@ const CostEntry = ({ project, onBack }) => {
     }
   };
 
+  const fetchMilestones = async () => {
+    try {
+      const response = await axios.get(`${API}/api/projects/${project.id}/milestones`);
+      setMilestones(response.data);
+    } catch (error) {
+      console.error('Error fetching milestones:', error);
+    }
+  };
+
   const calculateTotal = () => {
     if (formData.cost_type === 'hourly') {
       const hours = parseFloat(formData.hours) || 0;
