@@ -144,6 +144,7 @@ class CostEntry(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     project_id: str
     phase_id: Optional[str] = None
+    milestone_id: Optional[str] = None  # NEW: Link to milestone
     category_id: str
     category_name: str
     description: Optional[str] = ""
