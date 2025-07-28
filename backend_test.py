@@ -3080,6 +3080,7 @@ def run_all_tests():
         ("Cost Category Management", test_cost_categories),
         ("Project CRUD Operations", test_project_crud),
         ("Phase Management", test_phase_management),
+        ("Milestone System", test_milestone_system),  # NEW: Milestone system testing
         ("Cost Entry System", test_cost_entries),
         ("Manual Payment Endpoints", test_manual_payment_endpoints),  # NEW TEST
         ("Project Analytics", test_project_analytics),
