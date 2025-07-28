@@ -472,6 +472,324 @@ const GanttChart = ({ project, onBack }) => {
   );
 };
 
+// Milestone Management Component
+const MilestoneManager = ({ project, onBack }) => {
+  const [milestones, setMilestones] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const [editingMilestone, setEditingMilestone] = useState(null);
+  const [milestoneForm, setMilestoneForm] = useState({
+    name: '',
+    description: '',
+    milestone_date: '',
+    is_critical: false,
+    phase_id: null
+  });
+  const { t, language } = useLanguage();
+  const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+  useEffect(() => {
+    fetchMilestones();
+  }, []);
+
+  const fetchMilestones = async () => {
+    try {
+      const response = await axios.get(`${API}/projects/${project.id}/milestones`);
+      setMilestones(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching milestones:', error);
+      setLoading(false);
+    }
+  };
+
+  const handleMilestoneSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const milestoneData = {
+        ...milestoneForm,
+        project_id: project.id
+      };
+
+      if (editingMilestone) {
+        await axios.put(`${API}/milestones/${editingMilestone.id}`, milestoneData);
+        alert('✅ Milestone updated successfully!');
+      } else {
+        await axios.post(`${API}/milestones`, milestoneData);
+        alert('✅ Milestone created successfully!');
+      }
+
+      fetchMilestones();
+      setShowMilestoneModal(false);
+      setEditingMilestone(null);
+      setMilestoneForm({
+        name: '',
+        description: '',
+        milestone_date: '',
+        is_critical: false,
+        phase_id: null
+      });
+    } catch (error) {
+      console.error('Error saving milestone:', error);
+      alert('❌ Error saving milestone');
+    }
+  };
+
+  const handleEditMilestone = (milestone) => {
+    setEditingMilestone(milestone);
+    setMilestoneForm({
+      name: milestone.name,
+      description: milestone.description || '',
+      milestone_date: milestone.milestone_date,
+      is_critical: milestone.is_critical,
+      phase_id: milestone.phase_id
+    });
+    setShowMilestoneModal(true);
+  };
+
+  const handleDeleteMilestone = async (milestoneId) => {
+    if (!confirm('Are you sure you want to delete this milestone? All linked costs will be unlinked.')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/milestones/${milestoneId}`);
+      alert('✅ Milestone deleted successfully!');
+      fetchMilestones();
+    } catch (error) {
+      console.error('Error deleting milestone:', error);
+      alert('❌ Error deleting milestone');
+    }
+  };
+
+  const getMilestoneStatusColor = (milestone) => {
+    const today = new Date();
+    const milestoneDate = new Date(milestone.milestone_date);
+    
+    if (milestone.status === 'completed') return 'bg-green-500';
+    if (milestoneDate < today) return 'bg-red-500'; // Overdue
+    if (milestone.status === 'in_progress') return 'bg-blue-500';
+    return 'bg-gray-400'; // Not started
+  };
+
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US');
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <button
+                onClick={onBack}
+                className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                {t('backToDashboard')}
+              </button>
+              <h1 className="text-2xl font-bold text-gray-900">
+                🎯 {t('manageMilestones')} - {project.name}
+              </h1>
+            </div>
+            <button
+              onClick={() => setShowMilestoneModal(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>{t('addMilestone')}</span>
+            </button>
+          </div>
+
+          {/* Milestones List */}
+          <div className="space-y-4">
+            {milestones.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-gray-400 text-6xl mb-4">🎯</div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No milestones yet</h3>
+                <p className="text-gray-600 mb-4">Create your first milestone to track project progress</p>
+                <button
+                  onClick={() => setShowMilestoneModal(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  {t('addMilestone')}
+                </button>
+              </div>
+            ) : (
+              milestones.map((milestone) => (
+                <div key={milestone.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-4 h-4 rounded-full ${getMilestoneStatusColor(milestone)}`}></div>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-semibold text-lg">{milestone.name}</h3>
+                          {milestone.is_critical && (
+                            <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
+                              🔥 Critical
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-gray-600 text-sm">{milestone.description}</p>
+                        <div className="flex items-center space-x-4 mt-2 text-sm">
+                          <span className="text-blue-600">📅 {formatDate(milestone.milestone_date)}</span>
+                          <span className="capitalize text-gray-500">
+                            Status: {milestone.status?.replace('_', ' ') || 'Not Started'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleEditMilestone(milestone)}
+                        className="text-blue-600 hover:text-blue-800 p-2"
+                        title="Edit Milestone"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMilestone(milestone.id)}
+                        className="text-red-600 hover:text-red-800 p-2"
+                        title="Delete Milestone"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Milestone Modal */}
+      {showMilestoneModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">
+                {editingMilestone ? t('editMilestone') : t('addMilestone')}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowMilestoneModal(false);
+                  setEditingMilestone(null);
+                  setMilestoneForm({
+                    name: '',
+                    description: '',
+                    milestone_date: '',
+                    is_critical: false,
+                    phase_id: null
+                  });
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <form onSubmit={handleMilestoneSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('milestoneName')} *
+                </label>
+                <input
+                  type="text"
+                  value={milestoneForm.name}
+                  onChange={(e) => setMilestoneForm({...milestoneForm, name: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., Phase 1 Completion"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('milestoneDate')} *
+                </label>
+                <input
+                  type="date"
+                  value={milestoneForm.milestone_date}
+                  onChange={(e) => setMilestoneForm({...milestoneForm, milestone_date: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('milestoneDescription')}
+                </label>
+                <textarea
+                  value={milestoneForm.description}
+                  onChange={(e) => setMilestoneForm({...milestoneForm, description: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  rows="3"
+                  placeholder="Optional description..."
+                />
+              </div>
+              
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="is_critical"
+                  checked={milestoneForm.is_critical}
+                  onChange={(e) => setMilestoneForm({...milestoneForm, is_critical: e.target.checked})}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="is_critical" className="ml-2 text-sm text-gray-700">
+                  {t('criticalMilestone')} 🔥
+                </label>
+              </div>
+              
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMilestoneModal(false);
+                    setEditingMilestone(null);
+                  }}
+                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  {editingMilestone ? 'Update' : 'Create'} Milestone
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const LanguageContext = createContext();
 
 export const useLanguage = () => {
