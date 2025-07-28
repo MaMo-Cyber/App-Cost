@@ -1368,6 +1368,7 @@ const translations = {
     
     // Financial Overview
     financialOverview: "Financial Overview",
+    financialAnalysis: "Financial Analysis",
     
     // Category Management
     addCategory: "Add Category",
