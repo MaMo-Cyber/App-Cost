@@ -722,6 +722,7 @@ async def create_milestone(milestone: MilestoneCreate):
     milestone_obj = Milestone(**milestone_dict)
     
     # Convert date objects to strings for MongoDB storage
+    milestone_dict["id"] = milestone_obj.id  # Add the generated ID
     milestone_dict["milestone_date"] = milestone_obj.milestone_date.isoformat()
     milestone_dict["created_at"] = milestone_obj.created_at.isoformat()
     milestone_dict["updated_at"] = milestone_obj.updated_at.isoformat()
