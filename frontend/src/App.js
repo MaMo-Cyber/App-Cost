@@ -1568,7 +1568,9 @@ const translations = {
     
     // Summary Labels
     costBreakdown: "Kostenaufschlüsselung",
+    costBreakdownActivity: "Kostenaufschlüsselung & Aktivität",
     recentEntries: "Neueste Einträge",
+    recentCostEntries: "Neueste Kosteneinträge",
     projectSummary: "Projektzusammenfassung",
     totalBudget: "Gesamtbudget",
     totalSpent: "Gesamt ausgegeben",
