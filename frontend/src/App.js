@@ -1609,6 +1609,9 @@ const translations = {
     milestoneStatus: "Status",
     linkedToMilestone: "Mit Meilenstein verknüpft",
     
+    // Financial Overview
+    financialOverview: "Finanzübersicht",
+    
     // Category Management
     addCategory: "Kategorie hinzufügen",
     editCategory: "Kategorie bearbeiten",
