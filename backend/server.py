@@ -92,6 +92,40 @@ class PhaseCreate(BaseModel):
     start_date: date
     end_date: date
 
+class MilestoneStatus(str, Enum):
+    NOT_STARTED = "not_started"
+    IN_PROGRESS = "in_progress" 
+    COMPLETED = "completed"
+    DELAYED = "delayed"
+
+class Milestone(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    project_id: str
+    name: str
+    description: Optional[str] = ""
+    milestone_date: date
+    status: MilestoneStatus = MilestoneStatus.NOT_STARTED
+    is_critical: bool = False  # Critical path milestone
+    phase_id: Optional[str] = None  # Link to phase if needed
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class MilestoneCreate(BaseModel):
+    project_id: str
+    name: str
+    description: Optional[str] = ""
+    milestone_date: date
+    is_critical: bool = False
+    phase_id: Optional[str] = None
+
+class MilestoneUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    milestone_date: Optional[date] = None
+    status: Optional[MilestoneStatus] = None
+    is_critical: Optional[bool] = None
+    phase_id: Optional[str] = None
+
 class CostCategory(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
