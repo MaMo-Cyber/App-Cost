@@ -652,6 +652,17 @@ const translations = {
     hvac: "HVAC",
     contingency: "Contingency (10%)",
     
+    // Milestones
+    milestones: "Milestones",
+    manageMilestones: "Manage Milestones",
+    addMilestone: "Add Milestone",
+    editMilestone: "Edit Milestone",
+    milestoneName: "Milestone Name",
+    milestoneDate: "Milestone Date",
+    milestoneDescription: "Description",
+    criticalMilestone: "Critical Milestone",
+    milestoneStatus: "Status",
+    linkedToMilestone: "Linked to Milestone",
     // Gantt Chart & Project Management
     legend: "Legend",
     completed: "Completed", 
