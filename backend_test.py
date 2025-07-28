@@ -3727,6 +3727,8 @@ if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1 and sys.argv[1] == "cleanup":
         success = run_database_cleanup()
+    elif len(sys.argv) > 1 and sys.argv[1] == "milestone":
+        success = run_milestone_cost_linking_tests()
     else:
         success = run_all_tests()
     sys.exit(0 if success else 1)
