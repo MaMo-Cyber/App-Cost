@@ -165,6 +165,7 @@ class CostEntry(BaseModel):
 class CostEntryCreate(BaseModel):
     project_id: str
     phase_id: Optional[str] = None
+    milestone_id: Optional[str] = None  # NEW: Link cost to milestone
     category_id: str
     description: Optional[str] = ""
     hours: Optional[float] = None
