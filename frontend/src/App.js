@@ -1605,6 +1605,14 @@ const translations = {
     criticalMilestone: "Kritischer Meilenstein",
     milestoneStatus: "Status",
     linkedToMilestone: "Mit Meilenstein verknüpft",
+    
+    // Category Management
+    addCategory: "Kategorie hinzufügen",
+    editCategory: "Kategorie bearbeiten",
+    categoryName: "Kategorie Name",
+    categoryType: "Kategorie Typ",
+    categoryDescription: "Beschreibung",
+    
     // Gantt Chart & Project Management
     legend: "Legende",
     completed: "Abgeschlossen", 
