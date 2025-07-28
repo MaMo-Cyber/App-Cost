@@ -5993,6 +5993,13 @@ function App() {
             onBack={() => setCurrentView('dashboard')} 
           />
         );
+      case 'milestone-manager':
+        return (
+          <MilestoneManager 
+            project={currentProject} 
+            onBack={() => setCurrentView('dashboard')} 
+          />
+        );
       case 'gantt-chart':
         return (
           <GanttChart 
