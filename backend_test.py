@@ -1428,9 +1428,26 @@ def test_milestone_cost_linking():
     """Test milestone-cost linking functionality and automatic date synchronization"""
     print("\n🧪 Testing Milestone-Cost Linking Functionality")
     
-    if not test_data['project_id'] or not test_data['category_ids']:
-        print("  ❌ Missing project ID or category IDs for milestone-cost linking testing")
-        return False
+    # Ensure we have project and category data from previous tests
+    if not test_data.get('project_id'):
+        print("  ⚠️  No project ID from previous tests, using first available project...")
+        projects, status = make_request('GET', '/projects')
+        if status == 200 and projects:
+            test_data['project_id'] = projects[0]['id']
+            print(f"  ✅ Using project: {projects[0]['name']} (ID: {test_data['project_id']})")
+        else:
+            print("  ❌ No projects available for milestone-cost linking testing")
+            return False
+    
+    if not test_data.get('category_ids'):
+        print("  ⚠️  No category IDs from previous tests, fetching categories...")
+        categories, status = make_request('GET', '/cost-categories')
+        if status == 200 and categories:
+            test_data['category_ids'] = [cat['id'] for cat in categories[:3]]
+            print(f"  ✅ Using {len(test_data['category_ids'])} categories for testing")
+        else:
+            print("  ❌ No categories available for milestone-cost linking testing")
+            return False
     
     milestone_ids = []
     
