@@ -5440,7 +5440,7 @@ const CostEntry = ({ project, onBack }) => {
                   {milestones.map(milestone => (
                     <option key={milestone.id} value={milestone.id}>
                       🎯 {milestone.name} - {new Date(milestone.milestone_date).toLocaleDateString()}
-                      {milestone.is_critical && ' (Critical)'}
+                      {milestone.is_critical ? ' (Critical)' : ''}
                     </option>
                   ))}
                 </select>
