@@ -35,9 +35,10 @@ const GanttChart = ({ project, onBack }) => {
 
   const fetchGanttData = async () => {
     try {
-      const [phasesResponse, costsResponse] = await Promise.all([
+      const [phasesResponse, costsResponse, milestonesResponse] = await Promise.all([
         axios.get(`${API}/projects/${project.id}/phases`),
-        axios.get(`${API}/projects/${project.id}/cost-entries`)
+        axios.get(`${API}/projects/${project.id}/cost-entries`),
+        axios.get(`${API}/projects/${project.id}/milestones`)
       ]);
       
       setPhases(phasesResponse.data);
@@ -58,12 +59,13 @@ const GanttChart = ({ project, onBack }) => {
           progress: cost.status === 'paid' ? 100 : 0,
           amount: cost.total_amount,
           status: cost.status,
-          category: cost.category_name
+          category: cost.category_name,
+          milestoneId: cost.milestone_id
         });
       });
       
       setTasks(tasksByPhase);
-      calculateGanttLayout(phasesResponse.data, tasksByPhase);
+      calculateGanttLayout(phasesResponse.data, tasksByPhase, milestonesResponse.data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching Gantt data:', error);
